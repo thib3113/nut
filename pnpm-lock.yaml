@@ -27,9 +27,6 @@ importers:
       '@types/node':
         specifier: ^20.12.11
         version: 20.12.11
-      '@types/wake_on_lan':
-        specifier: ^0.0.33
-        version: 0.0.33
       '@typescript-eslint/parser':
         specifier: 7.8.0
         version: 7.8.0(eslint@8.56.0)(typescript@5.4.5)
@@ -576,9 +573,6 @@ packages:
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
-
-  '@types/wake_on_lan@0.0.33':
-    resolution: {integrity: sha512-kUDV5jTVq9iAeWfZfBhWFnLUXl5ggbCpJEYiXwMmisuQaHbfpZuo2DbOPHio9ZBMcqC45vuBAn/YKr1QRqelog==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -2429,10 +2423,6 @@ snapshots:
       undici-types: 5.26.5
 
   '@types/stack-utils@2.0.3': {}
-
-  '@types/wake_on_lan@0.0.33':
-    dependencies:
-      '@types/node': 20.12.11
 
   '@types/yargs-parser@21.0.3': {}
 
