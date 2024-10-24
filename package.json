@@ -13,9 +13,9 @@
     "jest": "node --experimental-vm-modules node_modules/jest/bin/jest.js --detectOpenHandles",
     "test:ci": "npm run jest -- --ci",
     "test:ci:coverage": "npm run jest -- --ci --coverage",
-    "lint": "eslint -f unix \"src/**\"",
+    "lint": "eslint",
     "lint:fix": "npm run lint -- --fix",
-    "ci:eslint": "npm run lint"
+    "ci:eslint": "npm run lint -- -f json -o ./coverage/eslint-report.json"
   },
   "keywords": [
     "NUT",
