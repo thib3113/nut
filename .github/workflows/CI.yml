@@ -77,14 +77,14 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.node-version }}
+          name: coverage
           path: |
             ./coverage/clover.xml
             ./coverage/coverage-final.json
             ./coverage/lcov.info
             ./coverage/junit.xml
             ./coverage/test-report.xml
-        if: always()
+        if: ${{ matrix.node-version == 'lts/*' }}
 
 
   eslint:
@@ -106,7 +106,7 @@ jobs:
       - name: replace path in coverage files
         run: find ./coverage -type f -exec sed -i -e "s@$(pwd)@<root>@g" {} \;
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
-          name: coverage
+          name: eslint
           path: ./coverage/eslint-report.json

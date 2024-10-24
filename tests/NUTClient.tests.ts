@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 import type { NUTClient as NUTClientType } from '../src/NUTClient.js';
 import type { RawNUTClient as RawNUTClientType } from '../src/RawNUTClient.js';
 import type { ConnectionOptions } from 'tls';
+import crypto from 'node:crypto';
 
 const testUPSName = 'dummyups';
 
