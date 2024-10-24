@@ -1,0 +1,7 @@
+package.json
+.*
+**/*.yml
+*.hbs
+*.md
+**/build**
+*.min.js
