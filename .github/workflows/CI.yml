@@ -66,7 +66,7 @@ jobs:
           push: false
 
       - name: start nut
-        run: docker run -p 3493:3493 nut-test:latest
+        run: docker run -d -p 3493:3493 nut-test:latest
 
       - uses: mattallty/jest-github-action@v1
         env:

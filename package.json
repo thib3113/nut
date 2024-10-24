@@ -14,7 +14,8 @@
     "test:ci": "npm run jest -- --ci",
     "test:ci:coverage": "npm run jest -- --ci --coverage",
     "lint": "eslint -f unix \"src/**\"",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "ci:eslint": "npm run lint"
   },
   "keywords": [
     "NUT",
