@@ -59,7 +59,7 @@ jobs:
         env:
           CI: true
 
-      - uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v6
         with:
           file: .github/tests/Dockerfile
           tags: nut-test:latest
@@ -80,7 +80,7 @@ jobs:
         run: find ./coverage -type f -exec sed -i -e "s@$(pwd)@<root>@g" {} \;
         if: always()
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage
           path: |
