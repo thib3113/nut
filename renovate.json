@@ -20,7 +20,6 @@
             "automerge": true
         }
     ],
-    "dependencyDashboard": true,
     "stabilityDays": 3,
     "assignees": ["thib3113"]
 }
