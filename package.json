@@ -46,7 +46,7 @@
     "@types/debug": "4.1.12",
     "@types/node": "20.12.11",
     "@typescript-eslint/parser": "7.18.0",
-    "esbuild": "0.21.1",
+    "esbuild": "0.24.0",
     "eslint": "8.57.1",
     "eslint-config-prettier": "9.1.0",
     "eslint-plugin-prettier": "5.1.3",
