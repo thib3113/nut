@@ -20,13 +20,13 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/image.tar
+          outputs: type=docker,dest=/tmp/nut-test.tar
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: test-nut
-          path: /tmp/image.tar
+          path: /tmp/nut-test.tar
 
   build:
     permissions:
@@ -92,7 +92,7 @@ jobs:
       - name: Load Docker image
         run: |
           ls -alh /tmp
-          docker load --input /tmp/myimage.tar
+          docker load --input /tmp/nut-test.tar
           docker image ls -a
 
       - name: start nut
