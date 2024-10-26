@@ -9,13 +9,14 @@ jobs:
   build-docker:
     runs-on: ubuntu-latest
     steps:
-    - uses: docker/build-push-action@v6
-      with:
-        file: .github/tests/Dockerfile
-        tags: nut-test:latest
-        push: false
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - uses: actions/checkout@v4
+      - uses: docker/build-push-action@v6
+        with:
+          file: .github/tests/Dockerfile
+          tags: nut-test:latest
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   build:
     permissions:
@@ -29,6 +30,8 @@ jobs:
         node-version: [ lts/*, 18]
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Install Node.js
         uses: actions/setup-node@v4
