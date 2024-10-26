@@ -20,6 +20,13 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/image.tar
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-nut
+          path: /tmp/image.tar
 
   build:
     permissions:
@@ -65,10 +72,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: npm build, and test
+      - name: Build project
         run: |
           pnpm run build
-          echo start tests
         env:
           CI: true
 
@@ -76,6 +82,17 @@ jobs:
         with:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           jobs: 'build-docker'
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: test-nut
+          path: /tmp
+
+      - name: Load Docker image
+        run: |
+          docker load --input /tmp/myimage.tar
+          docker image ls -a
 
       - name: start nut
         run: docker run -d -p 3493:3493 nut-test:latest
