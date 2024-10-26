@@ -1,6 +1,6 @@
 // read more here https://networkupstools.org/docs/developer-guide.chunked/apas02.html
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_variables
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_variables
  */
 export type deviceVariables =
     /**
@@ -50,7 +50,7 @@ export type deviceVariables =
 
 /**
  * @remarks The ups.* data will be removed in the future of nut https://networkupstools.org/docs/developer-guide.chunked/apas02.html
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_ups_general_unit_information
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_ups_general_unit_information
  */
 export type upsVariables =
     /**
@@ -211,7 +211,7 @@ export type upsVariables =
     | 'ups.shutdown';
 
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_input_incoming_line_power_information
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_input_incoming_line_power_information
  */
 export type inputVariables =
     /**
@@ -428,7 +428,7 @@ export type inputVariables =
     | 'input.phase.shift';
 
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_output_outgoing_power_inverter_information
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_output_outgoing_power_inverter_information
  */
 export type outputVariables =
     /**
@@ -583,7 +583,7 @@ export type baseVariables =
     | 'frequency.nominal';
 
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_battery_any_battery_details
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_battery_any_battery_details
  */
 export type batteryVariables =
     /**
@@ -652,7 +652,6 @@ export type batteryVariables =
     | 'battery.current.total'
     /**
      * Health status of the battery (opaque string)
-     * @see {ENUTStatus}
      */
     | 'battery.status'
     /**
@@ -733,7 +732,7 @@ export type batteryVariables =
     | 'battery.energysave.realpower';
 
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_ambient_conditions_from_external_probe_equipment
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_ambient_conditions_from_external_probe_equipment
  */
 export type ambientVariables =
     /**
@@ -874,7 +873,7 @@ export type ambientVariables =
     | `ambient.${number}.contacts.x.name`;
 
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_outlet_smart_outlet_management
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_outlet_smart_outlet_management
  */
 export type outletVariables =
     /**
@@ -1039,7 +1038,7 @@ export type outletVariables =
     | `outlet.group.${number}.input`;
 
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_driver_internal_driver_information
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_driver_internal_driver_information
  */
 export type driverVariables =
     /**
@@ -1076,7 +1075,7 @@ export type driverVariables =
     | 'driver.state';
 
 /**
- * @link https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_server_internal_server_information
+ * @see https://networkupstools.org/docs/developer-guide.chunked/apas02.html#_server_internal_server_information
  */
 export type serverVariables =
     /**

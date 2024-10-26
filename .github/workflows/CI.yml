@@ -71,6 +71,17 @@ jobs:
           test-command: pnpm run test:ci:coverage
           coverage-comment: false
 
+      - name: install eslint
+        run: npm install
+      - name: run eslint
+        run: |
+          echo start eslint
+          mkdir coverage
+          npm run ci:eslint
+        continue-on-error: true
+        env:
+          CI: true
+
       - name: replace path in coverage files
         run: find ./coverage -type f -exec sed -i -e "s@$(pwd)@<root>@g" {} \;
         if: always()
@@ -84,6 +95,7 @@ jobs:
             ./coverage/lcov.info
             ./coverage/junit.xml
             ./coverage/test-report.xml
+            ./coverage/eslint-report.json
         if: ${{ matrix.node-version == 'lts/*' }}
 
       - uses: codecov/codecov-action@v4
@@ -101,28 +113,3 @@ jobs:
         with:
           args: -Dsonar.projectName=nut
         if: ${{ matrix.node-version == 'lts/*' }}
-
-
-  eslint:
-    name: eslint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: install eslint
-        run: npm install
-      - name: run eslint
-        run: |
-          echo start eslint
-          mkdir coverage
-          npm run ci:eslint
-        continue-on-error: true
-        env:
-          CI: true
-
-      - name: replace path in coverage files
-        run: find ./coverage -type f -exec sed -i -e "s@$(pwd)@<root>@g" {} \;
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: eslint
-          path: ./coverage/eslint-report.json

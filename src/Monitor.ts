@@ -82,23 +82,23 @@ export interface IMonitorEvents {
     UNKNOWN_STATUS: (status: string) => void;
     /**
      * CHARGE of the battery
-     * @param charge {number} the current charge of the UPS (can be NaN)
-     * @param rawCharge {string} the raw value of charge (in case of NaN)
+     * @param charge the current charge of the UPS (can be NaN)
+     * @param rawCharge the raw value of charge (in case of NaN)
      */
     BATTERY_CHARGE: (charge: number, rawCharge: string) => void;
     /**
      * RUNTIME of the battery
-     * @param charge {number} the current charge of the UPS (can be NaN)
-     * @param rawCharge {string} the raw value of charge (in case of NaN)
+     * @param charge the current charge of the UPS (can be NaN)
+     * @param rawCharge the raw value of charge (in case of NaN)
      */
     BATTERY_RUNTIME: (charge: number, rawCharge: string) => void;
     /**
      * get a variable change
-     * @param key {string} the key
-     * @param oldValue {string} the old value of the variable
-     * @param newValue {string} the new value of the variable
-     * @param oldVariables {string} the old variables
-     * @param newVariables {string} the new variables
+     * @param key the key
+     * @param oldValue the old value of the variable
+     * @param newValue the new value of the variable
+     * @param oldVariables the old variables
+     * @param newVariables the new variables
      */
     VARIABLE_CHANGED: (
         key: nutVariablesNames,

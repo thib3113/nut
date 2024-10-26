@@ -115,7 +115,7 @@ npm install nut-client
   })
 
   // other events available in the technical documentation
-  // TODO add link to documentation
+  // https://thib3113.github.io/nut/interfaces/IMonitorEvents.html
 
   await monitor.start();
   ```
