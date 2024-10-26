@@ -71,8 +71,6 @@ jobs:
           test-command: pnpm run test:ci:coverage
           coverage-comment: false
 
-      - name: install eslint
-        run: npm install
       - name: run eslint
         run: |
           echo start eslint
