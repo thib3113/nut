@@ -6,9 +6,21 @@ on:
   pull_request:
 
 jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: docker/build-push-action@v6
+      with:
+        file: .github/tests/Dockerfile
+        tags: nut-test:latest
+        push: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
   build:
     permissions:
       checks: write
+      actions: read
     runs-on: ubuntu-latest
 
     strategy:
@@ -54,11 +66,10 @@ jobs:
         env:
           CI: true
 
-      - uses: docker/build-push-action@v6
+      - uses: yogeshlonkar/wait-for-jobs@v0
         with:
-          file: .github/tests/Dockerfile
-          tags: nut-test:latest
-          push: false
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+          jobs: 'build-docker'
 
       - name: start nut
         run: docker run -d -p 3493:3493 nut-test:latest
