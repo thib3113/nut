@@ -84,7 +84,7 @@ export class RawNUTClient {
                 }
             });
 
-            if (this.receivingList || receivedString.endsWith('\n')) {
+            if (this.receivingList || !receivedString.endsWith('\n')) {
                 return;
             }
 
