@@ -1,3 +1,6 @@
+/**
+ * current battery status
+ */
 export enum ENUTStatus {
     /**
      * ON LINE

@@ -1,7 +1,7 @@
 import { createDebugger } from './utils.internal.js';
 import net, { Socket } from 'node:net';
 // @ts-ignore
-import { queue } from 'async';
+import queue from 'async/queue';
 import type { QueueObject } from './QueueObject.js';
 import { checkError, parseLine, parseList } from './utils.js';
 import tls from 'node:tls';
@@ -19,6 +19,10 @@ interface ITask {
 export type UPSName = string;
 
 const debug = createDebugger('RawNUTClient');
+
+/**
+ * Reserved for advanced uses, use {@link NUTClient}
+ */
 export class RawNUTClient {
     private readonly _tcpClient: Socket;
     private _tlsClient?: TLSSocket;
@@ -44,7 +48,7 @@ export class RawNUTClient {
 
     private _connected = false;
     private receivedMessage = '';
-    private callBacks: Array<messageCallback> = [];
+    private readonly callBacks: Array<messageCallback> = [];
     private readonly cmdQueue: QueueObject<ITask>;
 
     constructor(host: string, port: number = 3493) {
@@ -80,7 +84,7 @@ export class RawNUTClient {
                 }
             });
 
-            if (this.receivingList || receivedString.slice(-1) !== '\n') {
+            if (this.receivingList || receivedString.endsWith('\n')) {
                 return;
             }
 
@@ -111,7 +115,7 @@ export class RawNUTClient {
             throw new Error('fail to init starttls');
         }
 
-        return new Promise<void>(async (resolve, reject) => {
+        return new Promise<void>((resolve) => {
             this._tlsClient = tls.connect(
                 {
                     ...tlsOptions,
@@ -124,7 +128,7 @@ export class RawNUTClient {
         });
     }
 
-    private sendOneByOne = async (cmdObject?: ITask) => {
+    private readonly sendOneByOne = async (cmdObject?: ITask) => {
         const { cmd, timeout } = cmdObject ?? {};
 
         if (!cmd) {
@@ -143,7 +147,7 @@ export class RawNUTClient {
                         this.client.off('error', onError);
                         resolve(checkError(str));
                     } catch (e) {
-                        reject(e);
+                        reject(e as Error);
                     }
                 });
             })
@@ -182,8 +186,8 @@ export class RawNUTClient {
     }
 
     /**
-     * You probably shouldn’t send this command unless you are upsmon, or a upsmon replacement.
-     * @param ups
+     * @remarks You probably shouldn’t send this command unless you are upsmon, or a upsmon replacement.
+     * @param ups {string} the name of the UPS
      */
     async login(ups: string): Promise<string> {
         return checkError(await this.send(['LOGIN', ups]));

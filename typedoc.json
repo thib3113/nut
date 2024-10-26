@@ -1,0 +1,11 @@
+{
+    "entryPoints": ["src/index.ts"],
+    "out": "docs",
+    "includeVersion": true,
+    "name": "Nut",
+    "useTsLinkResolution": true,
+    "basePath": ".",
+    "cleanOutputDir": true,
+    "githubPages": true,
+    "hideParameterTypesInTitle": true
+}

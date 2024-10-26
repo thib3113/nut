@@ -1,0 +1,126 @@
+name: Release
+on:
+  release:
+    types: [created]
+
+jobs:
+  ci:
+    uses: ./.github/workflows/CI.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    permissions:
+      checks: write
+      actions: read
+      contents: read
+      security-events: write
+
+  prepare:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          run_install: true
+          version: latest
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+  build:
+    needs: [ prepare, ci ]
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
+        id: pnpm-install
+        with:
+          run_install: true
+          version: latest
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+        shell: bash
+
+      - name: Compare npm with local (versions)
+        uses: rbatty19/compare-npm-versions-ci@master
+        id: package_version
+        continue-on-error: true
+        with:
+          path: .
+          npm_package_name: nut-client
+
+      - name: build dependencies
+        run: pnpm build
+
+      - name: publish to NPM
+        run: |
+          npm config set //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
+          pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+        if: steps.package_version.outputs.npm_is_greater != 'true'
+
+#      - name: publish to GPR
+#        run: |
+#          npx npe name @${{ github.repository_owner }}/${{ matrix.package.name }}
+#
+#          npm config set @${{ github.repository_owner }}:registry=https://npm.pkg.github.com
+#          npm config set //https://npm.pkg.github.com:_authToken=${NODE_AUTH_TOKEN}
+#          npm config set registry https://npm.pkg.github.com
+#          npm config set scope ${{ github.repository_owner }}
+#
+#          pnpm publish --filter @${{ github.repository_owner }}/${{ matrix.package.name }} --no-git-checks
+#        env:
+#          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#        working-directory: ${{ matrix.package.path }}
+#        if: steps.package_version.outputs.npm_is_greater != 'true'

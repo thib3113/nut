@@ -8,10 +8,14 @@ import { createDebugger } from './utils.internal.js';
 import { nutVariables, nutVariablesNames } from './NUTVariables.js';
 
 export interface IMonitorOptions {
+    /**
+     * Time between two checks (ms)
+     * @default 60000 (1m)
+     */
     pollFrequency?: number;
 }
 
-interface IMonitorEvents {
+export interface IMonitorEvents {
     /**
      * The UPS is back online.
      */
@@ -122,12 +126,29 @@ const defaultOptions: Required<IMonitorOptions> = {
 };
 
 const debug = createDebugger('Monitor');
+
+/**
+ * Allow to monitor events on the UPS
+ *
+ * @example
+ * ```ts
+ * const client = new NUTClient('127.0.0.1', 3493);
+ * const monitor = new Monitor(client, 'myUps');
+ * monitor.on('ONBATT', () => {
+ *   console.log('UPS "myUps" lost power and is now on battery');
+ * });
+ * await monitor.start()
+ * ```
+ */
 export class Monitor extends TypedEmitter<IMonitorEvents> {
-    private options: Required<IMonitorOptions>;
+    private readonly options: Required<IMonitorOptions>;
 
     private communication?: boolean;
     private previousState?: nutVariables;
-    private heartBeat: Heartbeat;
+    /**
+     * @private
+     */
+    private readonly heartBeat: Heartbeat;
     private ups?: UPS;
 
     constructor(
@@ -160,7 +181,7 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
         this.heartBeat.stop();
     }
 
-    private _loopFn = async () => {
+    private readonly _loopFn = async () => {
         if (!this.ups) {
             throw new Error('ups need to be setup before');
         }
@@ -243,9 +264,9 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
         Object.keys({
             ...previousState,
             ...state
-        }).map((k) => {
+        }).forEach((k) => {
             const key = k as nutVariablesNames;
-            return this.checkChangedValue(previousState, state, key, () => {
+            this.checkChangedValue(previousState, state, key, () => {
                 this.emit('VARIABLE_CHANGED', key, previousState[key], state[key], previousState, state);
                 variableChanged = true;
             });
