@@ -73,8 +73,6 @@ jobs:
 
       - name: run eslint
         run: |
-          echo start eslint
-          mkdir coverage
           npm run ci:eslint
         continue-on-error: true
         env:
