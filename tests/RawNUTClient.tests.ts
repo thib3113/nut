@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import { RawNUTClient } from '../index.js';
+import { RawNUTClient } from '../src/index.js';
 import { setTimeout } from 'node:timers/promises';
 import { TLSSocket } from 'tls';
 import { setInterval } from 'timers/promises';
