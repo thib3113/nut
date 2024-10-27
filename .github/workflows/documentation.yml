@@ -28,7 +28,6 @@ jobs:
         id: pnpm-install
         with:
           run_install: true
-          version: latest
 
       - name: Get pnpm store directory
         id: pnpm-cache
