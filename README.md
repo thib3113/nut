@@ -122,6 +122,12 @@ npm install nut-client
 
 - **Fully Typed with TypeScript (ESM + CJS)** : Built with TypeScript, `nut-client` is distributed in both ESM and CommonJS modules for maximum compatibility.
 
+## Debug
+this library include [debug](https://www.npmjs.com/package/debug), to debug, you can set the env variable :
+````dotenv
+DEBUG=nut-client:*
+````
+
 
 ## Contributing
 
