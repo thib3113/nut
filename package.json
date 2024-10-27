@@ -1,6 +1,6 @@
 {
   "name": "nut-client",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "main": "./lib/index.cjs",
   "description": "A NUT (Network UPS Tools) Client",
   "module": "./lib/index.mjs",
