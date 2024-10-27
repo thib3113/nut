@@ -1,4 +1,30 @@
 import { createDebugger } from './utils.internal.js';
+import {
+    AccessDeniedError,
+    AlreadyLoggedInError,
+    AlreadySetPasswordError,
+    AlreadySetUsernameError,
+    AlreadySslModeError,
+    CmdNotSupportedError,
+    DataStaleError,
+    DriverNotConnectedError,
+    FeatureNotConfiguredError,
+    FeatureNotSupportedError,
+    InstcmdFailedError,
+    InvalidArgumentError,
+    InvalidPasswordError,
+    InvalidUsernameError,
+    InvalidValueError,
+    PasswordRequiredError,
+    ReadonlyError,
+    SetFailedError,
+    TooLongError,
+    UnknownCommandError,
+    UnknownUPSError,
+    UsernameRequiredError,
+    VarNotSupportedError
+} from './Errors/index.js';
+import { UnknownError } from './Errors/UnknownError.js';
 
 const debug = createDebugger('NUTClient.utils');
 
@@ -58,7 +84,7 @@ export const variableTypeConverter = (
 ): { type: (typeof EVariableType)[keyof typeof EVariableType] } & Record<string, unknown> => {
     debug('variableTypeConverter %s', type);
     if (type.startsWith('STRING:')) {
-        const maxLength = parseLine(type)[0]?.split(':')?.[1];
+        const maxLength = Number(parseLine(type)[0]?.split(':')?.[1]);
         return {
             type: EVariableType.STRING,
             maxLength
@@ -74,64 +100,64 @@ export const variableTypeConverter = (
     return { type: EVariableType.NUMBER };
 };
 
-export const getErrorMessage = (str: string): string => {
+export const errorMessageToError = (str: string): string => {
     switch (str?.toUpperCase()) {
         case 'ACCESS-DENIED':
-            return 'The client’s host and/or authentication details (username, password) are not sufficient to execute the requested command.';
+            throw new AccessDeniedError();
         case 'UNKNOWN-UPS':
-            return 'The UPS specified in the request is not known to upsd. This usually means that it didn’t match anything in ups.conf.';
+            throw new UnknownUPSError();
         case 'VAR-NOT-SUPPORTED':
-            return 'The specified UPS doesn’t support the variable in the request. This is also sent for unrecognized variables which are in a space which is handled by upsd, such as server.*.';
+            throw new VarNotSupportedError();
         case 'CMD-NOT-SUPPORTED':
-            return 'The specified UPS doesn’t support the instant command in the request.';
+            throw new CmdNotSupportedError();
         case 'INVALID-ARGUMENT':
-            return 'The client sent an argument to a command which is not recognized or is otherwise invalid in this context. This is typically caused by sending a valid command like GET with an invalid subcommand.';
+            throw new InvalidArgumentError();
         case 'INSTCMD-FAILED':
-            return 'upsd failed to deliver the instant command request to the driver. No further information is available to the client. This typically indicates a dead or broken driver.';
+            throw new InstcmdFailedError();
         case 'SET-FAILED':
-            return 'upsd failed to deliver the set request to the driver. This is just like INSTCMD-FAILED above.';
+            throw new SetFailedError();
         case 'READONLY':
-            return 'The requested variable in a SET command is not writable.';
+            throw new ReadonlyError();
         case 'TOO-LONG':
-            return 'The requested value in a SET command is too long.';
+            throw new TooLongError();
         case 'FEATURE-NOT-SUPPORTED':
-            return 'This instance of upsd does not support the requested feature. This is only used for TLS/SSL mode (STARTTLS) at the moment.';
+            throw new FeatureNotSupportedError();
         case 'FEATURE-NOT-CONFIGURED':
-            return 'This instance of upsd hasn’t been configured properly to allow the requested feature to operate. This is also limited to STARTTLS for now.';
+            throw new FeatureNotConfiguredError();
         case 'ALREADY-SSL-MODE':
-            return 'TLS/SSL mode is already enabled on this connection, so upsd can’t start it again.';
+            throw new AlreadySslModeError();
         case 'DRIVER-NOT-CONNECTED':
-            return 'upsd can’t perform the requested command, since the driver for that UPS is not connected. This usually means that the driver is not running, or if it is, the ups.conf is misconfigured.';
+            throw new DriverNotConnectedError();
         case 'DATA-STALE':
-            return 'upsd is connected to the driver for the UPS, but that driver isn’t providing regular updates or has specifically marked the data as stale. upsd refuses to provide variables on stale units to avoid false readings. This generally means that the driver is running, but it has lost communications with the hardware. Check the physical connection to the equipment.';
+            throw new DataStaleError();
         case 'ALREADY-LOGGED-IN':
-            return 'The client already sent LOGIN for a UPS and can’t do it again. There is presently a limit of one LOGIN record per connection.';
+            throw new AlreadyLoggedInError();
         case 'INVALID-PASSWORD':
-            return 'The client sent an invalid PASSWORD . perhaps an empty one.';
+            throw new InvalidPasswordError();
         case 'ALREADY-SET-PASSWORD':
-            return 'The client already set a PASSWORD and can’t set another. This also should never happen with normal NUT clients.';
+            throw new AlreadySetPasswordError();
         case 'INVALID-USERNAME':
-            return 'The client sent an invalid USERNAME.';
+            throw new InvalidUsernameError();
         case 'ALREADY-SET-USERNAME':
-            return 'The client has already set a USERNAME, and can’t set another. This should never happen with normal NUT clients.';
+            throw new AlreadySetUsernameError();
         case 'USERNAME-REQUIRED':
-            return 'The requested command requires a username for authentication, but the client hasn’t set one.';
+            throw new UsernameRequiredError();
         case 'PASSWORD-REQUIRED':
-            return 'The requested command requires a passname for authentication, but the client hasn’t set one.';
+            throw new PasswordRequiredError();
         case 'UNKNOWN-COMMAND':
-            return 'upsd doesn’t recognize the requested command.';
+            throw new UnknownCommandError();
         case 'INVALID-VALUE':
-            return 'The value specified in the request is not valid. This usually applies to a SET of an ENUM type which is using a value which is not in the list of allowed values.';
+            throw new InvalidValueError();
+        default:
+            throw new UnknownError(str);
     }
-
-    return str;
 };
 
 export const checkError = (message: string): string => {
     if (message?.startsWith('ERR')) {
         const errorMessage = message.replace('ERR ', '');
 
-        throw new Error(getErrorMessage(errorMessage));
+        errorMessageToError(errorMessage);
     }
 
     return message;

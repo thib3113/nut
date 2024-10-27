@@ -91,9 +91,7 @@ jobs:
 
       - name: Load Docker image
         run: |
-          ls -alh /tmp
           docker load --input /tmp/nut-test.tar
-          docker image ls -a
 
       - name: start nut
         run: docker run -d -p 3493:3493 nut-test:latest

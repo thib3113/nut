@@ -267,7 +267,7 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
         }).forEach((k) => {
             const key = k as nutVariablesNames;
             this.checkChangedValue(previousState, state, key, () => {
-                this.emit('VARIABLE_CHANGED', key, previousState[key], state[key], previousState, state);
+                this.emit('VARIABLE_CHANGED', key, previousState[key] ?? '', state[key] ?? '', previousState, state);
                 variableChanged = true;
             });
         });

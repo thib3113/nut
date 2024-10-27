@@ -10,6 +10,7 @@ const mockRawNutClient = {
     send: jest.fn<RawNUTClientType['send']>(),
     getVariableType: jest.fn<RawNUTClientType['getVariableType']>(),
     listWriteableVariables: jest.fn<RawNUTClientType['listWriteableVariables']>(),
+    login: jest.fn<RawNUTClientType['login']>(),
     setVariable: jest.fn<RawNUTClientType['setVariable']>(),
     getVariable: jest.fn<RawNUTClientType['getVariable']>(),
     getVariableRange: jest.fn<RawNUTClientType['getVariableRange']>(),
@@ -303,6 +304,13 @@ describe('NutClient', () => {
             expect(await client.setVariable(testUPSName, 'device.description', 'desc')).toBe(res);
             expect(mockRawNutClient.setVariable).toHaveBeenCalledTimes(1);
             expect(mockRawNutClient.setVariable).toHaveBeenCalledWith(testUPSName, 'device.description', 'desc');
+        });
+        it('should login', async () => {
+            const res = crypto.randomUUID();
+            mockRawNutClient.login.mockResolvedValueOnce(res);
+            await client.login(testUPSName);
+            expect(mockRawNutClient.login).toHaveBeenCalledTimes(1);
+            expect(mockRawNutClient.login).toHaveBeenCalledWith(testUPSName);
         });
     });
 });

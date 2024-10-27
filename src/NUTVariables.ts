@@ -1099,4 +1099,4 @@ export type nutVariablesNames =
     | driverVariables
     | serverVariables;
 
-export type nutVariables = Record<nutVariablesNames, string>;
+export type nutVariables = Partial<Record<nutVariablesNames, string>>;

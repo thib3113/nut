@@ -1,3 +1,4 @@
+export * from './Errors/index.js';
 export * from './ENUTStatus.js';
 export * from './Monitor.js';
 export * from './NUTClient.js';

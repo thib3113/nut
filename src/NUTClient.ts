@@ -205,6 +205,13 @@ export class NUTClient {
     }
 
     /**
+     * @inheritDoc RawNUTClient.login
+     */
+    login(ups: UPSName): ReturnType<RawNUTClient['login']> {
+        return this.client.login(ups);
+    }
+
+    /**
      * get number of clients logged (using LOGIN command)
      * @param ups
      */

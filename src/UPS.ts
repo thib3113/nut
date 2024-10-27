@@ -1,4 +1,4 @@
-import { NUTClient } from './NUTClient.js';
+import type { NUTClient } from './NUTClient.js';
 import { nutVariablesNames } from './NUTVariables.js';
 
 export class UPS {
@@ -57,5 +57,12 @@ export class UPS {
     }
     async getNumLogins(): ReturnType<NUTClient['getNumLogins']> {
         return this.client.getNumLogins(this.name);
+    }
+
+    /**
+     * @inheritDoc NUTClient.login
+     */
+    async login(): ReturnType<NUTClient['login']> {
+        return this.client.login(this.name);
     }
 }
