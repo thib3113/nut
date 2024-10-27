@@ -5,6 +5,8 @@ on:
 
 jobs:
   ci:
+    permissions:
+      checks: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
