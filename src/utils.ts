@@ -4,7 +4,7 @@ import {
     AlreadyLoggedInError,
     AlreadySetPasswordError,
     AlreadySetUsernameError,
-    AlreadySslModeError,
+    AlreadySSLModeError,
     CmdNotSupportedError,
     DataStaleError,
     DriverNotConnectedError,
@@ -125,7 +125,7 @@ export const errorMessageToError = (str: string): string => {
         case 'FEATURE-NOT-CONFIGURED':
             throw new FeatureNotConfiguredError();
         case 'ALREADY-SSL-MODE':
-            throw new AlreadySslModeError();
+            throw new AlreadySSLModeError();
         case 'DRIVER-NOT-CONNECTED':
             throw new DriverNotConnectedError();
         case 'DATA-STALE':

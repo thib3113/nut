@@ -1,5 +1,31 @@
 import { describe, expect, it } from '@jest/globals';
-import { parseList, variableTypeConverter } from '../src/index.js';
+import {
+    AccessDeniedError,
+    AlreadyLoggedInError,
+    AlreadySetPasswordError,
+    AlreadySetUsernameError,
+    AlreadySSLModeError,
+    CmdNotSupportedError,
+    DataStaleError,
+    DriverNotConnectedError,
+    FeatureNotConfiguredError,
+    FeatureNotSupportedError,
+    InstcmdFailedError,
+    InvalidArgumentError,
+    InvalidPasswordError,
+    InvalidUsernameError,
+    InvalidValueError,
+    PasswordRequiredError,
+    ReadonlyError,
+    SetFailedError,
+    TooLongError,
+    UnknownCommandError,
+    UnknownUPSError,
+    UsernameRequiredError,
+    VarNotSupportedError,
+    UnknownError
+} from '../src/Errors/index.js';
+import { errorMessageToError, parseList, variableTypeConverter } from '../src/utils.js';
 
 describe('utils', () => {
     describe('parseList', () => {
@@ -57,6 +83,52 @@ describe('utils', () => {
             expect(variableTypeConverter('unknown')).toStrictEqual({
                 type: 'NUMBER'
             });
+        });
+    });
+
+    describe('errorMessageToError', () => {
+        const tests: Array<[string, new () => Error]> = [
+            ['ACCESS-DENIED', AccessDeniedError],
+            ['UNKNOWN-UPS', UnknownUPSError],
+            ['VAR-NOT-SUPPORTED', VarNotSupportedError],
+            ['CMD-NOT-SUPPORTED', CmdNotSupportedError],
+            ['INVALID-ARGUMENT', InvalidArgumentError],
+            ['INSTCMD-FAILED', InstcmdFailedError],
+            ['SET-FAILED', SetFailedError],
+            ['READONLY', ReadonlyError],
+            ['TOO-LONG', TooLongError],
+            ['FEATURE-NOT-SUPPORTED', FeatureNotSupportedError],
+            ['FEATURE-NOT-CONFIGURED', FeatureNotConfiguredError],
+            ['ALREADY-SSL-MODE', AlreadySSLModeError],
+            ['DRIVER-NOT-CONNECTED', DriverNotConnectedError],
+            ['DATA-STALE', DataStaleError],
+            ['ALREADY-LOGGED-IN', AlreadyLoggedInError],
+            ['INVALID-PASSWORD', InvalidPasswordError],
+            ['ALREADY-SET-PASSWORD', AlreadySetPasswordError],
+            ['INVALID-USERNAME', InvalidUsernameError],
+            ['ALREADY-SET-USERNAME', AlreadySetUsernameError],
+            ['USERNAME-REQUIRED', UsernameRequiredError],
+            ['PASSWORD-REQUIRED', PasswordRequiredError],
+            ['UNKNOWN-COMMAND', UnknownCommandError],
+            ['INVALID-VALUE', InvalidValueError]
+        ];
+
+        it.each<[string, new () => Error]>(tests)(`should return correct error when nut server throw %s`, (str, error) => {
+            expect.assertions(1);
+            try {
+                errorMessageToError(str);
+            } catch (e) {
+                expect(e).toBeInstanceOf(error);
+            }
+        });
+
+        it('should throw unknown error if unknown error', async () => {
+            expect.assertions(1);
+            try {
+                errorMessageToError('random string');
+            } catch (e) {
+                expect(e).toBeInstanceOf(UnknownError);
+            }
         });
     });
 });
