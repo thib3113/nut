@@ -1,0 +1,32 @@
+name: 'setup nodejs'
+inputs:
+  GITHUB_TOKEN:
+    description: "the github token"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: test-nut
+        path: /tmp
+
+    - name: Load Docker image
+      shell: bash
+      run: |
+        docker load --input /tmp/nut-test.tar
+
+    - name: start nut
+      shell: bash
+      run: docker run -d -p 3493:3493 nut-test:latest
+
+    - uses: mattallty/jest-github-action@v1
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        CI: true
+      with:
+        test-command: pnpm run test:ci:coverage
+        coverage-comment: false

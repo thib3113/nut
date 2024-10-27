@@ -15,24 +15,7 @@ jobs:
   build-docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - uses: docker/build-push-action@v6
-        with:
-          file: .github/tests/Dockerfile
-          tags: nut-test:latest
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/nut-test.tar
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-nut
-          path: /tmp/nut-test.tar
+      - uses: ./.github/actions/build-nut-image
 
   build:
     permissions:
@@ -49,66 +32,16 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-
-      - uses: pnpm/action-setup@v2
-        name: Install pnpm
-        id: pnpm-install
-        with:
-          run_install: true
-          version: latest
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build project
-        run: |
-          pnpm run build
-        env:
-          CI: true
+      - uses: ./.github/actions/setup-node
 
       - uses: yogeshlonkar/wait-for-jobs@v0
         with:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           jobs: 'build-docker'
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: ./.github/actions/run-tests
         with:
-          name: test-nut
-          path: /tmp
-
-      - name: Load Docker image
-        run: |
-          docker load --input /tmp/nut-test.tar
-
-      - name: start nut
-        run: docker run -d -p 3493:3493 nut-test:latest
-
-      - uses: mattallty/jest-github-action@v1
-        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CI: true
-        with:
-          test-command: pnpm run test:ci:coverage
-          coverage-comment: false
 
       - name: run eslint
         run: |
