@@ -4,6 +4,12 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: true
+      SONAR_TOKEN:
+        required: true
 
 jobs:
   build-docker:
