@@ -63,7 +63,7 @@ jobs:
             ./coverage/eslint-report.json
         if: ${{ matrix.node-version == 'lts/*' }}
 
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
