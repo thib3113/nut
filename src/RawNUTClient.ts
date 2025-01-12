@@ -1,7 +1,7 @@
 import { createDebugger } from './utils.internal.js';
 import net, { Socket } from 'node:net';
 // @ts-ignore
-import queue from 'async/queue';
+import queue from 'async/queue.js';
 import type { QueueObject } from './QueueObject.js';
 import { checkError, parseLine, parseList } from './utils.js';
 import tls from 'node:tls';

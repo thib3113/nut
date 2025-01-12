@@ -47,7 +47,7 @@ npm install nut-client
 
   const client = new NUTClient('127.0.0.1', 3493);
 
-  console.log(client.listUps());
+  console.log(client.listUPS());
   console.log(client.listVariables('ups'));
 
   //manual command

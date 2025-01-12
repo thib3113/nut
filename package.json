@@ -34,6 +34,7 @@
     "ups",
     "power"
   ],
+  "typings": "./lib/index.d.ts",
   "exports": {
     ".": {
       "import": {
@@ -45,9 +46,6 @@
         "default": "./lib/index.cjs"
       },
       "default": "./lib/index.cjs"
-    },
-    "./types": {
-      "types": "./index.d.ts"
     }
   },
   "author": "Thibaut SEVERAC <thib3113@gmail.com>",
