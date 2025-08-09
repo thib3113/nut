@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/build-nut-image
+
+  build:
+    permissions:
+      checks: write
+      actions: read
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [ lts/*, 18]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-node
+
+      - uses: yogeshlonkar/wait-for-jobs@v0
+        with:
+          gh-token: ${{ secrets.GITHUB_TOKEN }}
+          jobs: 'build-docker'
+
+      - uses: ./.github/actions/run-tests
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: run eslint
+        run: |
+          npm run ci:eslint
+        continue-on-error: true
+        env:
+          CI: true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            ./coverage/clover.xml
+            ./coverage/coverage-final.json
+            ./coverage/lcov.info
+            ./coverage/junit.xml
+            ./coverage/test-report.xml
+            ./coverage/eslint-report.json
+        if: ${{ matrix.node-version == 'lts/*' }}
