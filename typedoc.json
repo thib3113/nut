@@ -6,6 +6,5 @@
     "useTsLinkResolution": true,
     "basePath": ".",
     "cleanOutputDir": true,
-    "githubPages": true,
-    "hideParameterTypesInTitle": true
+    "githubPages": true
 }
