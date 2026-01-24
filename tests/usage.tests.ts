@@ -54,14 +54,14 @@ describe('connection tests', () => {
 
         it('should fail if invalid username', async () => {
             await client.connect('baduser', 'secret');
-            await expect(() => client.runCommand(testUPSName, 'driver.reload')).rejects.toThrowError(
+            await expect(() => client.runCommand(testUPSName, 'driver.reload')).rejects.toThrow(
                 'The client’s host and/or authentication details (username, password) are not sufficient to execute the requested command.'
             );
         });
 
         it('should fail if invalid password', async () => {
             await client.connect('user', 'badsecret');
-            await expect(() => client.runCommand(testUPSName, 'driver.reload')).rejects.toThrowError(
+            await expect(() => client.runCommand(testUPSName, 'driver.reload')).rejects.toThrow(
                 'The client’s host and/or authentication details (username, password) are not sufficient to execute the requested command.'
             );
         });
