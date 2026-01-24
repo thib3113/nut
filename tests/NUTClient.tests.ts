@@ -29,7 +29,7 @@ const mockRawNutClient = {
     listClients: jest.fn<RawNUTClientType['listClients']>(),
     listUPS: jest.fn<RawNUTClientType['listUPS']>()
 };
-const mockRawNutClientConstructor = jest.fn(() => mockRawNutClient);
+const mockRawNutClientConstructor = jest.fn((_host: string, _port: number) => mockRawNutClient);
 jest.unstable_mockModule('../src/RawNUTClient.js', () => ({
     RawNUTClient: mockRawNutClientConstructor
 }));
@@ -129,7 +129,7 @@ describe('NutClient', () => {
         it('should handle bad message', async () => {
             mockRawNutClient.listVariables.mockResolvedValueOnce(['"" "Dummy Manufacturer"']);
 
-            await expect(() => client.listVariables(testUPSName)).rejects.toThrowError('fail to get key from variables');
+            await expect(() => client.listVariables(testUPSName)).rejects.toThrow('fail to get key from variables');
         });
 
         it('should handle variable without value', async () => {
@@ -163,7 +163,7 @@ describe('NutClient', () => {
         it('should handle bad message', async () => {
             mockRawNutClient.listWriteableVariables.mockResolvedValueOnce(['"" "Dummy Manufacturer"']);
 
-            await expect(() => client.listWriteableVariables(testUPSName)).rejects.toThrowError('fail to get key from variables');
+            await expect(() => client.listWriteableVariables(testUPSName)).rejects.toThrow('fail to get key from variables');
         });
 
         it('should handle variable without value', async () => {

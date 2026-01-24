@@ -43,11 +43,11 @@ describe('utils', () => {
         });
 
         it('should throw if received an invalid list end', () => {
-            expect(() => parseList(`BEGIN LIST UPS\nUPS dummyups "Dummy UPS for testing"`)).toThrowError('fail to parse list (bad END)');
+            expect(() => parseList(`BEGIN LIST UPS\nUPS dummyups "Dummy UPS for testing"`)).toThrow('fail to parse list (bad END)');
         });
 
         it('should throw if received an invalid list begin', () => {
-            expect(() => parseList('UPS dummyups "Dummy UPS for testing"\nEND LIST UPS`')).toThrowError('fail to parse list (bad BEGIN)');
+            expect(() => parseList('UPS dummyups "Dummy UPS for testing"\nEND LIST UPS`')).toThrow('fail to parse list (bad BEGIN)');
         });
     });
 
