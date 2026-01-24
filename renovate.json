@@ -8,6 +8,7 @@
         ":updateNotScheduled",
         ":ignoreModulesAndTests",
         ":pinDevDependencies",
+        ":pinDependencies",
         ":enableVulnerabilityAlerts",
         "group:monorepos",
         "group:recommended",
