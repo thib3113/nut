@@ -67,7 +67,8 @@ export const parseList = (listOutput: string): Array<string> => {
             return previousValue;
         }
 
-        return [...previousValue, currentValue?.replace(`${linePrefix} `, '')];
+        previousValue.push(currentValue?.replace(`${linePrefix} `, ''));
+        return previousValue;
     }, []);
 };
 
