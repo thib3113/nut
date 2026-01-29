@@ -28,13 +28,15 @@ import { UnknownError } from './Errors/UnknownError.js';
 
 const debug = createDebugger('NUTClient.utils');
 
+const parseLineRegex = /"([^"]*)"|(\S+)/g;
+
 export const parseLine = (line: string): Array<string> => {
     debug('parseLine: %o', line);
-    const regex = /"([^"]*)"|(\S+)/g;
+    parseLineRegex.lastIndex = 0;
     const parts = [];
     let match;
 
-    while ((match = regex.exec(line)) !== null) {
+    while ((match = parseLineRegex.exec(line)) !== null) {
         parts.push(match[1] ?? match[2]);
     }
 
