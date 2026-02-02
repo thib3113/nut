@@ -16,7 +16,7 @@ runs:
         outputs: type=docker,dest=/tmp/nut-test.tar
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: test-nut
         path: /tmp/nut-test.tar

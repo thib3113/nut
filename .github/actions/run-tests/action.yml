@@ -9,7 +9,7 @@ runs:
   steps:
 
     - name: Download artifact
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v7
       with:
         name: test-nut
         path: /tmp
