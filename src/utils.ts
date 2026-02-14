@@ -63,13 +63,16 @@ export const parseList = (listOutput: string): Array<string> => {
         throw new Error('fail to parse list (bad END)');
     }
 
+    const prefixWithSpaceLength = linePrefix.length + 1;
     return lines.reduce((previousValue: Array<string>, currentValue: string) => {
         if (!currentValue.startsWith(linePrefix)) {
             debug(`parseList remove unwanted object type %o != %o`, currentValue, linePrefix);
             return previousValue;
         }
 
-        previousValue.push(currentValue?.replace(`${linePrefix} `, ''));
+        previousValue.push(
+            currentValue[linePrefix.length] === ' ' ? currentValue.slice(prefixWithSpaceLength) : currentValue
+        );
         return previousValue;
     }, []);
 };
