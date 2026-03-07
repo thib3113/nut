@@ -261,16 +261,22 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
         this.checkChangedValue(previousState, state, 'battery.runtime', (value) => this.emit('BATTERY_RUNTIME', Number(value), value));
 
         let variableChanged = false;
-        Object.keys({
-            ...previousState,
-            ...state
-        }).forEach((k) => {
+        const processKey = (k: string) => {
             const key = k as nutVariablesNames;
             this.checkChangedValue(previousState, state, key, () => {
                 this.emit('VARIABLE_CHANGED', key, previousState[key] ?? '', state[key] ?? '', previousState, state);
                 variableChanged = true;
             });
-        });
+        };
+
+        for (const key of Object.keys(state)) {
+            processKey(key);
+        }
+        for (const key of Object.keys(previousState)) {
+            if (!(key in state)) {
+                processKey(key);
+            }
+        }
 
         // one variable changed ?
         if (variableChanged) {
