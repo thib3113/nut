@@ -89,19 +89,19 @@ export class NUTClient {
      * @param ups {string}
      */
     async listVariables(ups: UPSName): Promise<nutVariables> {
-        return this.client.listVariables(ups).then((res) =>
-            Object.fromEntries(
-                res.map((line) => {
-                    const [key, value] = parseLine(line) as [nutVariables, string];
+        return this.client.listVariables(ups).then((res) => {
+            const variables: nutVariables = {} as nutVariables;
+            for (const line of res) {
+                const [key, value] = parseLine(line) as [nutVariables, string];
 
-                    if (!key) {
-                        throw new Error('fail to get key from variables');
-                    }
+                if (!key) {
+                    throw new Error('fail to get key from variables');
+                }
 
-                    return [key, value ?? ''];
-                })
-            )
-        );
+                variables[key] = value ?? '';
+            }
+            return variables;
+        });
     }
 
     /**
@@ -189,19 +189,19 @@ export class NUTClient {
      * @param ups
      */
     async listWriteableVariables(ups: UPSName): Promise<Record<string, string>> {
-        return this.client.listWriteableVariables(ups).then((res) =>
-            Object.fromEntries(
-                res.map((line) => {
-                    const [key, value] = parseLine(line);
+        return this.client.listWriteableVariables(ups).then((res) => {
+            const variables: Record<string, string> = {};
+            for (const line of res) {
+                const [key, value] = parseLine(line);
 
-                    if (!key) {
-                        throw new Error('fail to get key from variables');
-                    }
+                if (!key) {
+                    throw new Error('fail to get key from variables');
+                }
 
-                    return [key, value ?? ''];
-                })
-            )
-        );
+                variables[key] = value ?? '';
+            }
+            return variables;
+        });
     }
 
     /**
