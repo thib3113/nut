@@ -35,7 +35,7 @@ jobs:
 
       - uses: ./.github/actions/setup-node
 
-      - uses: yogeshlonkar/wait-for-jobs@v0
+      - uses: yogeshlonkar/wait-for-jobs@v1
         with:
           gh-token: ${{ secrets.GITHUB_TOKEN }}
           jobs: 'build-docker'
