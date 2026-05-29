@@ -92,7 +92,7 @@ export class NUTClient {
         return this.client.listVariables(ups).then((res) => {
             const variables: nutVariables = {} as nutVariables;
             for (const line of res) {
-                const [key, value] = parseLine(line) as [nutVariables, string];
+                const [key, value] = parseLine(line) as [nutVariablesNames, string];
 
                 if (!key) {
                     throw new Error('fail to get key from variables');
