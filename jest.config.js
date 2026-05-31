@@ -7,7 +7,7 @@ export default {
     collectCoverageFrom: ['<rootDir>/src/**/*.ts', '!<rootDir>/src/types/generated/**/*', '!<rootDir>/src/debug.ts'],
     coveragePathIgnorePatterns: ['\\\\node_modules\\\\', 'tests'],
     moduleFileExtensions: ['ts', 'tsx', 'js'],
-    setupFiles: ['<rootDir>/tests/_scripts/setup.js'],
+    setupFiles: [],
     testMatch: ['<rootDir>/tests/**/*.(test|tests|spec|specs).+(ts|tsx|js)'],
     reporters: [
         'default',

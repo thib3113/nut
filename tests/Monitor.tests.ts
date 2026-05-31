@@ -33,7 +33,14 @@ describe('Monitor', () => {
         // @ts-ignore
         await monitor._loopFn();
 
-        expect(spy).not.toHaveBeenCalledWith('VARIABLE_CHANGED', expect.anything(), expect.anything(), expect.anything(), expect.anything(), expect.anything());
+        expect(spy).not.toHaveBeenCalledWith(
+            'VARIABLE_CHANGED',
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            expect.anything(),
+            expect.anything()
+        );
     });
 
     it('should emit VARIABLE_CHANGED when a variable is modified', async () => {
