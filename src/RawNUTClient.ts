@@ -74,15 +74,15 @@ export class RawNUTClient {
             this.receivedMessage += receivedString;
 
             //check lists
-            receivedString.split('\n').forEach((line) => {
-                if (line.startsWith('BEGIN LIST')) {
+            if (receivedString.includes('LIST')) {
+                const lastBegin = receivedString.lastIndexOf('BEGIN LIST');
+                const lastEnd = receivedString.lastIndexOf('END LIST');
+                if (lastBegin > lastEnd && (lastBegin === 0 || receivedString[lastBegin - 1] === '\n')) {
                     this.receivingList = true;
-                }
-
-                if (line.startsWith('END LIST')) {
+                } else if (lastEnd > lastBegin && (lastEnd === 0 || receivedString[lastEnd - 1] === '\n')) {
                     this.receivingList = false;
                 }
-            });
+            }
 
             if (this.receivingList || !receivedString.endsWith('\n')) {
                 return;
