@@ -70,9 +70,7 @@ export const parseList = (listOutput: string): Array<string> => {
             return previousValue;
         }
 
-        previousValue.push(
-            currentValue[linePrefix.length] === ' ' ? currentValue.slice(prefixWithSpaceLength) : currentValue
-        );
+        previousValue.push(currentValue[linePrefix.length] === ' ' ? currentValue.slice(prefixWithSpaceLength) : currentValue);
         return previousValue;
     }, []);
 };

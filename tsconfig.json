@@ -10,7 +10,7 @@
         "sourceMap": true,
         "declaration": true,
         "strict": true,
-        "typeRoots": ["./node_modules/@types"]
+        "types": ["node", "debug"]
     },
     "exclude": ["node_modules", "build"],
     "ts-node": {
