@@ -1062,11 +1062,11 @@ export type driverVariables =
      */
     | 'driver.version.usb'
     /**
-     * Parameter xxx (ups.conf or  cmdline -x) setting
+     * Parameter name (ups.conf or  cmdline -x) setting
      */
     | `driver.parameter.${string}`
     /**
-     * Flag xxx (ups.conf or cmdline -x) status
+     * Flag name (ups.conf or cmdline -x) status
      */
     | `driver.flag.${string}`
     /**
