@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [ lts/*, 18]
+        node-version: [22, lts/*, 26]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,7 +55,6 @@ jobs:
         with:
           name: coverage
           path: |
-            ./coverage/clover.xml
             ./coverage/coverage-final.json
             ./coverage/lcov.info
             ./coverage/eslint-report.json

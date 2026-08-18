@@ -9,7 +9,7 @@ export default defineConfig({
         include: ['tests/**/*.tests.ts'],
         coverage: {
             provider: 'v8',
-            reporter: ['text', 'json', 'html'],
+            reporter: ['text', 'json', 'lcov', 'html'],
             reportsDirectory: './coverage',
             include: ['src/**/*.ts', '!src/types/generated/**', '!src/debug.ts'],
             exclude: ['node_modules/**', 'tests/**', 'vite.config.ts', 'vitest.config.ts', '**/*.d.ts']
