@@ -1,27 +1,34 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UPS } from '../src/UPS.js';
 import type { NUTClient as NUTClientType } from '../src/NUTClient.js';
 import crypto from 'node:crypto';
 
 const testUPSName = 'dummyups';
 
-const mockNutClient = {
-    listVariables: jest.fn<NUTClientType['listVariables']>(),
-    getVariableType: jest.fn<NUTClientType['getVariableType']>(),
-    listWriteableVariables: jest.fn<NUTClientType['listWriteableVariables']>(),
-    login: jest.fn<NUTClientType['login']>(),
-    getNumLogins: jest.fn<NUTClientType['getNumLogins']>(),
-    listClients: jest.fn<NUTClientType['listClients']>(),
-    getVariableEnum: jest.fn<NUTClientType['getVariableEnum']>(),
-    getCommandDescription: jest.fn<NUTClientType['getCommandDescription']>(),
-    getVariable: jest.fn<NUTClientType['getVariable']>(),
-    setVariable: jest.fn<NUTClientType['setVariable']>(),
-    getVariableRange: jest.fn<NUTClientType['getVariableRange']>(),
-    getVariableDescription: jest.fn<NUTClientType['getVariableDescription']>(),
-    listCommands: jest.fn<NUTClientType['listCommands']>()
-};
-const mockNutClientConstructor = jest.fn(() => mockNutClient);
-jest.unstable_mockModule('../src/NUTClient.js', () => ({
+const { mockNutClient, mockNutClientConstructor } = vi.hoisted(() => {
+    const mockNutClient = {
+        listVariables: vi.fn<NUTClientType['listVariables']>(),
+        getVariableType: vi.fn<NUTClientType['getVariableType']>(),
+        listWriteableVariables: vi.fn<NUTClientType['listWriteableVariables']>(),
+        login: vi.fn<NUTClientType['login']>(),
+        getNumLogins: vi.fn<NUTClientType['getNumLogins']>(),
+        listClients: vi.fn<NUTClientType['listClients']>(),
+        getVariableEnum: vi.fn<NUTClientType['getVariableEnum']>(),
+        getCommandDescription: vi.fn<NUTClientType['getCommandDescription']>(),
+        getVariable: vi.fn<NUTClientType['getVariable']>(),
+        setVariable: vi.fn<NUTClientType['setVariable']>(),
+        getVariableRange: vi.fn<NUTClientType['getVariableRange']>(),
+        getVariableDescription: vi.fn<NUTClientType['getVariableDescription']>(),
+        listCommands: vi.fn<NUTClientType['listCommands']>()
+    };
+    return {
+        mockNutClient,
+        mockNutClientConstructor: vi.fn(function () {
+            return mockNutClient;
+        })
+    };
+});
+vi.mock('../src/NUTClient.js', () => ({
     NUTClient: mockNutClientConstructor
 }));
 

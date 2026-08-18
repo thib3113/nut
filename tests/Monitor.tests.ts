@@ -1,22 +1,22 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi, type Mocked } from 'vitest';
 import { Monitor } from '../src/Monitor.js';
 import { NUTClient } from '../src/NUTClient.js';
 import { UPS } from '../src/UPS.js';
 import { ENUTStatus } from '../src/ENUTStatus.js';
 
 describe('Monitor', () => {
-    let mockClient: jest.Mocked<NUTClient>;
-    let mockUps: jest.Mocked<UPS>;
+    let mockClient: Mocked<NUTClient>;
+    let mockUps: Mocked<UPS>;
     let monitor: Monitor;
 
     beforeEach(() => {
         mockClient = {
-            getUPS: jest.fn()
-        } as unknown as jest.Mocked<NUTClient>;
+            getUPS: vi.fn()
+        } as unknown as Mocked<NUTClient>;
 
         mockUps = {
-            listVariables: jest.fn()
-        } as unknown as jest.Mocked<UPS>;
+            listVariables: vi.fn()
+        } as unknown as Mocked<UPS>;
 
         monitor = new Monitor(mockClient, 'testUps');
         // @ts-ignore
@@ -24,7 +24,7 @@ describe('Monitor', () => {
     });
 
     it('should not emit events on the first loop', async () => {
-        const spy = jest.spyOn(monitor, 'emit');
+        const spy = vi.spyOn(monitor, 'emit');
         mockUps.listVariables.mockResolvedValueOnce({
             'battery.charge': '100',
             'battery.status': ENUTStatus.OL
@@ -44,7 +44,7 @@ describe('Monitor', () => {
     });
 
     it('should emit VARIABLE_CHANGED when a variable is modified', async () => {
-        const spy = jest.spyOn(monitor, 'emit');
+        const spy = vi.spyOn(monitor, 'emit');
 
         // Initial state
         // @ts-ignore
@@ -74,7 +74,7 @@ describe('Monitor', () => {
     });
 
     it('should emit VARIABLE_CHANGED when a variable is added', async () => {
-        const spy = jest.spyOn(monitor, 'emit');
+        const spy = vi.spyOn(monitor, 'emit');
 
         // Initial state
         // @ts-ignore
@@ -104,7 +104,7 @@ describe('Monitor', () => {
     });
 
     it('should emit VARIABLE_CHANGED when a variable is removed', async () => {
-        const spy = jest.spyOn(monitor, 'emit');
+        const spy = vi.spyOn(monitor, 'emit');
 
         // Initial state
         // @ts-ignore
@@ -134,7 +134,7 @@ describe('Monitor', () => {
     });
 
     it('should handle status changes and emit corresponding events', async () => {
-        const spy = jest.spyOn(monitor, 'emit');
+        const spy = vi.spyOn(monitor, 'emit');
 
         // Initial state
         // @ts-ignore
@@ -156,7 +156,7 @@ describe('Monitor', () => {
     });
 
     it('should handle communication loss and recovery', async () => {
-        const spy = jest.spyOn(monitor, 'emit');
+        const spy = vi.spyOn(monitor, 'emit');
 
         // Initially communicating
         // @ts-ignore

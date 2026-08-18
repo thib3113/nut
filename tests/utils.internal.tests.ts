@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
 import { createDebugger } from '../src/utils.internal.js';
 
 describe('createDebugger', () => {

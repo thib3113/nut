@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NUTClient as NUTClientType } from '../src/NUTClient.js';
 import type { RawNUTClient as RawNUTClientType } from '../src/RawNUTClient.js';
 import type { ConnectionOptions } from 'tls';
@@ -6,41 +6,49 @@ import crypto from 'node:crypto';
 
 const testUPSName = 'dummyups';
 
-const mockRawNutClient = {
-    send: jest.fn<RawNUTClientType['send']>(),
-    getVariableType: jest.fn<RawNUTClientType['getVariableType']>(),
-    listWriteableVariables: jest.fn<RawNUTClientType['listWriteableVariables']>(),
-    login: jest.fn<RawNUTClientType['login']>(),
-    setVariable: jest.fn<RawNUTClientType['setVariable']>(),
-    getVariable: jest.fn<RawNUTClientType['getVariable']>(),
-    getVariableRange: jest.fn<RawNUTClientType['getVariableRange']>(),
-    getVariableEnum: jest.fn<RawNUTClientType['getVariableEnum']>(),
-    listVariables: jest.fn<RawNUTClientType['listVariables']>(),
-    getVariableDescription: jest.fn<RawNUTClientType['getVariableDescription']>(),
-    version: jest.fn<RawNUTClientType['version']>(),
-    startTLS: jest.fn<RawNUTClientType['startTLS']>(),
-    connect: jest.fn<RawNUTClientType['connect']>(),
-    logout: jest.fn<RawNUTClientType['logout']>(),
-    netVersion: jest.fn<RawNUTClientType['netVersion']>(),
-    getCommandDescription: jest.fn<RawNUTClientType['getCommandDescription']>(),
-    listCommands: jest.fn<RawNUTClientType['listCommands']>(),
-    getNumLogins: jest.fn<RawNUTClientType['getNumLogins']>(),
-    help: jest.fn<RawNUTClientType['help']>(),
-    listClients: jest.fn<RawNUTClientType['listClients']>(),
-    listUPS: jest.fn<RawNUTClientType['listUPS']>()
-};
-const mockRawNutClientConstructor = jest.fn((_host: string, _port: number) => mockRawNutClient);
-jest.unstable_mockModule('../src/RawNUTClient.js', () => ({
+const { mockRawNutClient, mockRawNutClientConstructor, mockVariableTypeConverter } = vi.hoisted(() => {
+    const mockRawNutClient = {
+        send: vi.fn<RawNUTClientType['send']>(),
+        getVariableType: vi.fn<RawNUTClientType['getVariableType']>(),
+        listWriteableVariables: vi.fn<RawNUTClientType['listWriteableVariables']>(),
+        login: vi.fn<RawNUTClientType['login']>(),
+        setVariable: vi.fn<RawNUTClientType['setVariable']>(),
+        getVariable: vi.fn<RawNUTClientType['getVariable']>(),
+        getVariableRange: vi.fn<RawNUTClientType['getVariableRange']>(),
+        getVariableEnum: vi.fn<RawNUTClientType['getVariableEnum']>(),
+        listVariables: vi.fn<RawNUTClientType['listVariables']>(),
+        getVariableDescription: vi.fn<RawNUTClientType['getVariableDescription']>(),
+        version: vi.fn<RawNUTClientType['version']>(),
+        startTLS: vi.fn<RawNUTClientType['startTLS']>(),
+        connect: vi.fn<RawNUTClientType['connect']>(),
+        logout: vi.fn<RawNUTClientType['logout']>(),
+        netVersion: vi.fn<RawNUTClientType['netVersion']>(),
+        getCommandDescription: vi.fn<RawNUTClientType['getCommandDescription']>(),
+        listCommands: vi.fn<RawNUTClientType['listCommands']>(),
+        getNumLogins: vi.fn<RawNUTClientType['getNumLogins']>(),
+        help: vi.fn<RawNUTClientType['help']>(),
+        listClients: vi.fn<RawNUTClientType['listClients']>(),
+        listUPS: vi.fn<RawNUTClientType['listUPS']>()
+    };
+    return {
+        mockRawNutClient,
+        mockRawNutClientConstructor: vi.fn(function (_host: string, _port: number) {
+            return mockRawNutClient;
+        }),
+        mockVariableTypeConverter: vi.fn()
+    };
+});
+vi.mock('../src/RawNUTClient.js', () => ({
     RawNUTClient: mockRawNutClientConstructor
 }));
 
-const utilsOriginal = await import('../src/utils.js');
-
-const mockVariableTypeConverter = jest.fn();
-jest.unstable_mockModule('../src/utils.js', async () => ({
-    ...utilsOriginal,
-    variableTypeConverter: mockVariableTypeConverter
-}));
+vi.mock('../src/utils.js', async (importOriginal) => {
+    const utilsOriginal = await importOriginal<typeof import('../src/utils.js')>();
+    return {
+        ...utilsOriginal,
+        variableTypeConverter: mockVariableTypeConverter
+    };
+});
 
 const { NUTClient } = await import('../src/NUTClient.js');
 

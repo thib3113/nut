@@ -58,8 +58,6 @@ jobs:
             ./coverage/clover.xml
             ./coverage/coverage-final.json
             ./coverage/lcov.info
-            ./coverage/junit.xml
-            ./coverage/test-report.xml
             ./coverage/eslint-report.json
         if: ${{ matrix.node-version == 'lts/*' }}
 
