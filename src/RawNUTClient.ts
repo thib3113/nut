@@ -77,14 +77,21 @@ export class RawNUTClient {
             if (receivedString.includes('LIST')) {
                 const lastBegin = receivedString.lastIndexOf('BEGIN LIST');
                 const lastEnd = receivedString.lastIndexOf('END LIST');
+                debug('LIST detection: receivedString=%o, lastBegin=%o, lastEnd=%o, receivingList=%o', 
+                    receivedString, lastBegin, lastEnd, this.receivingList);
                 if (lastBegin > lastEnd && (lastBegin === 0 || receivedString[lastBegin - 1] === '\n')) {
                     this.receivingList = true;
+                    debug('Setting receivingList=true based on chunk');
                 } else if (lastEnd > lastBegin && (lastEnd === 0 || receivedString[lastEnd - 1] === '\n')) {
                     this.receivingList = false;
+                    debug('Setting receivingList=false based on chunk');
                 }
             }
 
-            if (this.receivingList || !receivedString.endsWith('\n')) {
+            debug('Full receivedMessage so far: %o', this.receivedMessage);
+            debug('receivingList=%o, endsWithNewline=%o', this.receivingList, this.receivedMessage.endsWith('\n'));
+
+            if (this.receivingList || !this.receivedMessage.endsWith('\n')) {
                 return;
             }
 
