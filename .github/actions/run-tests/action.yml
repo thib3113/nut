@@ -29,3 +29,4 @@ runs:
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
         CI: true
+        DEBUG: nut-client:*
