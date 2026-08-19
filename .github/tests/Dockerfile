@@ -39,7 +39,7 @@ RUN echo 'device.mfr: Dummy Manufacturer' > /etc/nut/etc/dummyups.dev && \
     echo 'MODE=netserver' > /etc/nut/etc/nut.conf && \
     echo '[dummyups]' > /etc/nut/etc/ups.conf && \
     echo 'driver = dummy-ups' >> /etc/nut/etc/ups.conf && \
-    echo 'port = etc/dummyups.dev' >> /etc/nut/etc/ups.conf && \
+    echo 'port = /etc/nut/etc/dummyups.dev' >> /etc/nut/etc/ups.conf && \
     echo 'desc = "Dummy UPS for testing"' >> /etc/nut/etc/ups.conf && \
     echo 'LISTEN 0.0.0.0 3493' > /etc/nut/etc/upsd.conf && \
     echo 'CERTFILE /etc/nut/certs/upsd.pem' >> /etc/nut/etc/upsd.conf && \
@@ -74,16 +74,21 @@ RUN openssl req -new -x509 -nodes -out upsd.crt -keyout upsd.key -subj "/C=US/ST
     mv upsd.pem /etc/nut/certs/ && \
     chmod 700 /etc/nut/certs/*
 
-RUN apt-get remove --purge -y build-essential \
-    && apt-get autoremove -y \
-    && rm -rf /usr/src/nut-2.8.2 /tmp/nut-2.8.2.tar.gz
-
 RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "echo '=== NUT container starting ==='" >> /entrypoint.sh && \
     echo "echo 'Listing /etc/nut/etc/:'" >> /entrypoint.sh && \
     echo "ls -la /etc/nut/etc/" >> /entrypoint.sh && \
     echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
+    echo "echo 'Waiting for driver to be ready...'" >> /entrypoint.sh && \
+    echo "for i in \$(seq 1 30); do" >> /entrypoint.sh && \
+    echo "    if /etc/nut/sbin/upsc dummyups@localhost >/dev/null 2>&1; then" >> /entrypoint.sh && \
+    echo "        echo 'Driver is ready.'" >> /entrypoint.sh && \
+    echo "        break" >> /entrypoint.sh && \
+    echo "    fi" >> /entrypoint.sh && \
+    echo "    echo \"Waiting for driver... attempt \$i\"" >> /entrypoint.sh && \
+    echo "    sleep 1" >> /entrypoint.sh && \
+    echo "done" >> /entrypoint.sh && \
     echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsd -D" >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
