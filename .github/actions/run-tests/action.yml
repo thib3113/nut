@@ -21,7 +21,20 @@ runs:
 
     - name: start nut
       shell: bash
-      run: docker run -d -p 3493:3493 nut-test:latest
+      run: |
+        docker run -d -p 3493:3493 --name nut-server nut-test:latest
+        echo "Container started: nut-server"
+
+    - name: Wait for container to initialize
+      shell: bash
+      run: sleep 5
+
+    - name: Show container logs
+      shell: bash
+      run: |
+        echo "=== Container logs ==="
+        docker logs nut-server
+        echo "=== End of container logs ==="
 
     - name: Run tests
       shell: bash
