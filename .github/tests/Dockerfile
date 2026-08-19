@@ -41,7 +41,6 @@ RUN echo 'device.mfr: Dummy Manufacturer' > /etc/nut/etc/dummyups.dev && \
     echo 'driver = dummy-ups' >> /etc/nut/etc/ups.conf && \
     echo 'port = etc/dummyups.dev' >> /etc/nut/etc/ups.conf && \
     echo 'desc = "Dummy UPS for testing"' >> /etc/nut/etc/ups.conf && \
-    echo 'mode = dummy-once' >> /etc/nut/etc/ups.conf && \
     echo 'LISTEN 0.0.0.0 3493' > /etc/nut/etc/upsd.conf && \
     echo 'CERTFILE /etc/nut/certs/upsd.pem' >> /etc/nut/etc/upsd.conf && \
     echo "DISABLE_WEAK_SSL true" >> /etc/nut/etc/upsd.conf && \
@@ -79,8 +78,14 @@ RUN apt-get remove --purge -y build-essential \
     && apt-get autoremove -y \
     && rm -rf /usr/src/nut-2.8.2 /tmp/nut-2.8.2.tar.gz
 
-RUN echo "#!/bin/sh" >> /entrypoint.sh && \
-    echo "/etc/nut/sbin/upsdrvctl start && /etc/nut/sbin/upsd -D" >> /entrypoint.sh && \
+RUN echo "#!/bin/sh" > /entrypoint.sh && \
+    echo "echo '=== NUT container starting ==='" >> /entrypoint.sh && \
+    echo "echo 'Listing /etc/nut/etc/:'" >> /entrypoint.sh && \
+    echo "ls -la /etc/nut/etc/" >> /entrypoint.sh && \
+    echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
+    echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
+    echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
+    echo "/etc/nut/sbin/upsd -D" >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 WORKDIR /etc/nut
