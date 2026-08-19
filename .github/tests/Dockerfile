@@ -81,7 +81,6 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
     echo "echo 'upsdrvctl started, checking status...'" >> /entrypoint.sh && \
-    echo "/etc/nut/sbin/upsdrvctl status dummyups" >> /entrypoint.sh && \
     echo "echo 'Waiting for driver to be ready...'" >> /entrypoint.sh && \
     echo "for i in \$(seq 1 30); do" >> /entrypoint.sh && \
     echo "    if /etc/nut/sbin/upsc dummyups@localhost >/dev/null 2>&1; then" >> /entrypoint.sh && \
