@@ -78,8 +78,10 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "echo '=== NUT container starting ==='" >> /entrypoint.sh && \
     echo "echo 'Listing /etc/nut/etc/:'" >> /entrypoint.sh && \
     echo "ls -la /etc/nut/etc/" >> /entrypoint.sh && \
-    echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
-    echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
+    echo "echo 'Starting dummy-ups driver in debug mode...'" >> /entrypoint.sh && \
+    echo "/etc/nut/sbin/dummy-ups -a dummyups -DD -u nut &" >> /entrypoint.sh && \
+    echo "echo 'Driver debug started with pid \$!'" >> /entrypoint.sh && \
+    echo "sleep 3" >> /entrypoint.sh && \
     echo "echo 'upsdrvctl started, checking status...'" >> /entrypoint.sh && \
     echo "echo 'Waiting for driver to be ready...'" >> /entrypoint.sh && \
     echo "for i in \$(seq 1 30); do" >> /entrypoint.sh && \
