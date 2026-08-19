@@ -39,7 +39,7 @@ RUN echo 'device.mfr: Dummy Manufacturer' > /etc/nut/etc/dummyups.dev && \
     echo 'MODE=netserver' > /etc/nut/etc/nut.conf && \
     echo '[dummyups]' > /etc/nut/etc/ups.conf && \
     echo 'driver = dummy-ups' >> /etc/nut/etc/ups.conf && \
-    echo 'port = dummyups.dev' >> /etc/nut/etc/ups.conf && \
+    echo 'port = etc/dummyups.dev' >> /etc/nut/etc/ups.conf && \
     echo 'desc = "Dummy UPS for testing"' >> /etc/nut/etc/ups.conf && \
     echo 'mode = dummy-once' >> /etc/nut/etc/ups.conf && \
     echo 'LISTEN 0.0.0.0 3493' > /etc/nut/etc/upsd.conf && \
