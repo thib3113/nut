@@ -80,8 +80,6 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "ls -la /etc/nut/etc/" >> /entrypoint.sh && \
     echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
-    echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
-    echo "/etc/nut/sbin/upsd -D" >> /entrypoint.sh && \
     echo "echo 'Waiting for driver to be ready...'" >> /entrypoint.sh && \
     echo "for i in \$(seq 1 30); do" >> /entrypoint.sh && \
     echo "    if /etc/nut/sbin/upsc dummyups@localhost >/dev/null 2>&1; then" >> /entrypoint.sh && \
@@ -91,6 +89,8 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "    echo \"Waiting for driver... attempt \$i\"" >> /entrypoint.sh && \
     echo "    sleep 1" >> /entrypoint.sh && \
     echo "done" >> /entrypoint.sh && \
+    echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
+    echo "/etc/nut/sbin/upsd -D" >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 WORKDIR /etc/nut
