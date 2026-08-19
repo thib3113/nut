@@ -93,7 +93,7 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "    sleep 1" >> /entrypoint.sh && \
     echo "done" >> /entrypoint.sh && \
     echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
-    echo "/etc/nut/sbin/upsd -D" >> /entrypoint.sh & \
+    echo "/etc/nut/sbin/upsd -D &" >> /entrypoint.sh && \
     echo "upsd_pid=\$!" >> /entrypoint.sh && \
     echo "echo 'upsd started with pid \$upsd_pid'" >> /entrypoint.sh && \
     echo "sleep 2" >> /entrypoint.sh && \
