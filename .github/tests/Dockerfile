@@ -80,17 +80,36 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "ls -la /etc/nut/etc/" >> /entrypoint.sh && \
     echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
+    echo "echo 'upsdrvctl started, checking status...'" >> /entrypoint.sh && \
+    echo "/etc/nut/sbin/upsdrvctl status dummyups" >> /entrypoint.sh && \
     echo "echo 'Waiting for driver to be ready...'" >> /entrypoint.sh && \
     echo "for i in \$(seq 1 30); do" >> /entrypoint.sh && \
     echo "    if /etc/nut/sbin/upsc dummyups@localhost >/dev/null 2>&1; then" >> /entrypoint.sh && \
     echo "        echo 'Driver is ready.'" >> /entrypoint.sh && \
+    echo "        /etc/nut/sbin/upsc dummyups@localhost var list" >> /entrypoint.sh && \
     echo "        break" >> /entrypoint.sh && \
     echo "    fi" >> /entrypoint.sh && \
     echo "    echo \"Waiting for driver... attempt \$i\"" >> /entrypoint.sh && \
     echo "    sleep 1" >> /entrypoint.sh && \
     echo "done" >> /entrypoint.sh && \
     echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
-    echo "/etc/nut/sbin/upsd -D" >> /entrypoint.sh && \
+    echo "/etc/nut/sbin/upsd -D" >> /entrypoint.sh & \
+    echo "upsd_pid=\$!" >> /entrypoint.sh && \
+    echo "echo 'upsd started with pid \$upsd_pid'" >> /entrypoint.sh && \
+    echo "sleep 2" >> /entrypoint.sh && \
+    echo "echo 'Checking if upsd is listening on port 3493...'" >> /entrypoint.sh && \
+    echo "netstat -tlnp | grep :3493 || echo 'Not listening yet'" >> /entrypoint.sh && \
+    echo "echo 'Waiting a bit more for upsd to be ready...'" >> /entrypoint.sh && \
+    echo "for i in \$(seq 1 10); do" >> /entrypoint.sh && \
+    echo "    if /etc/nut/sbin/upsc -l dummyups@localhost >/dev/null 2>&1; then" >> /entrypoint.sh && \
+    echo "        echo 'upsd is ready.'" >> /entrypoint.sh && \
+    echo "        break" >> /entrypoint.sh && \
+    echo "    fi" >> /entrypoint.sh && \
+    echo "    echo \"Waiting for upsd... attempt \$i\"" >> /entrypoint.sh && \
+    echo "    sleep 1" >> /entrypoint.sh && \
+    echo "done" >> /entrypoint.sh && \
+    echo "echo 'Entering main loop...'" >> /entrypoint.sh && \
+    echo "wait \$upsd_pid" >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 WORKDIR /etc/nut
