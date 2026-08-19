@@ -47,10 +47,10 @@ describe('connection tests', () => {
             }
         });
 
-        it('should succeed with connection', async () => {
+it('should succeed with connection', async () => {
             await client.connect('user', 'secret');
-            await client.runCommand(testUPSName, 'driver.reload');
-        });
+            await client.runCommand(testUPSName, 'load.off');
+          });
 
         it('should fail if invalid username', async () => {
             await client.connect('baduser', 'secret');
@@ -125,9 +125,9 @@ describe('usage tests', () => {
     });
 
     describe('commands', () => {
-        it('should list commands', async () => {
-            expect(await client.listCommands(testUPSName)).toContain('driver.reload');
-        });
+it('should list commands', async () => {
+            expect(await client.listCommands(testUPSName)).toContain('load.off');
+          });
         it('should get command description', async () => {
             expect(await client.getCommandDescription(testUPSName, 'driver.reload')).toBe(
                 'Reload running driver configuration from the file system (only works for changes in some options)'
@@ -150,10 +150,10 @@ describe('usage tests', () => {
             expect(await client.getVariable(testUPSName, 'device.model')).toStrictEqual('Dummy UPS');
         });
 
-        it('should get variable type', async () => {
-            // NUMBER is the default value if driver don't specify it
-            expect(await client.getVariableType(testUPSName, 'device.mfr')).toBe('NUMBER');
-        });
+it('should get variable type', async () => {
+        // STRING is the type for variables added via definition file
+        expect(await client.getVariableType(testUPSName, 'device.mfr')).toBe('STRING');
+      });
 
         it('should get variable description', async () => {
             expect(await client.getVariableDescription(testUPSName, 'device.mfr')).toBe('Description unavailable');

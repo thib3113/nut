@@ -32,10 +32,14 @@ RUN make install
 
 RUN addgroup --system nut && adduser --system nut --group
 
-RUN echo 'MODE=netserver' > /etc/nut/etc/nut.conf && \
+RUN echo 'device.mfr: Dummy Manufacturer' > /etc/nut/etc/dummyups.dev && \
+    echo 'device.model: Dummy UPS' >> /etc/nut/etc/dummyups.dev && \
+    echo 'device.type: ups' >> /etc/nut/etc/dummyups.dev && \
+    echo 'ups.status: OL' >> /etc/nut/etc/dummyups.dev && \
+    echo 'MODE=netserver' > /etc/nut/etc/nut.conf && \
     echo '[dummyups]' > /etc/nut/etc/ups.conf && \
     echo 'driver = dummy-ups' >> /etc/nut/etc/ups.conf && \
-    echo 'port = /dev/null' >> /etc/nut/etc/ups.conf && \
+    echo 'port = dummyups.dev' >> /etc/nut/etc/ups.conf && \
     echo 'desc = "Dummy UPS for testing"' >> /etc/nut/etc/ups.conf && \
     echo 'mode = dummy-once' >> /etc/nut/etc/ups.conf && \
     echo 'LISTEN 0.0.0.0 3493' > /etc/nut/etc/upsd.conf && \
