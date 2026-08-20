@@ -78,6 +78,12 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "echo '=== NUT container starting ==='" >> /entrypoint.sh && \
     echo "echo 'Listing /etc/nut/etc/:'" >> /entrypoint.sh && \
     echo "ls -la /etc/nut/etc/" >> /entrypoint.sh && \
+    echo "echo 'Listing /etc/nut/sbin/:'" >> /entrypoint.sh && \
+    echo "ls -la /etc/nut/sbin/" >> /entrypoint.sh && \
+    echo "echo 'Listing /var/lib/ups/driver/:'" >> /entrypoint.sh && \
+    echo "ls -la /var/lib/ups/driver/" >> /entrypoint.sh && \
+    echo "echo 'Which dummy-ups:'" >> /entrypoint.sh && \
+    echo "which dummy-ups || echo 'not in PATH'" >> /entrypoint.sh && \
     echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
     echo "echo 'upsdrvctl started, checking status...'" >> /entrypoint.sh && \
