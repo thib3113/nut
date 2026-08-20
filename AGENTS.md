@@ -88,6 +88,7 @@ RawNUTClient  →  NUTClient  →  UPS
 
 ### MUST DO
 
+- Use English for everything: code, comments, documentation, commit messages, and any other text.
 - Run `pnpm run build` and `pnpm run test` before proposing changes.
 - Follow existing code style — Prettier and ESLint are configured; run `pnpm run lint:fix` if unsure.
 - Respect the two-layer architecture (`RawNUTClient` → `NUTClient` → `UPS`). Do not collapse layers or bypass the facade.
