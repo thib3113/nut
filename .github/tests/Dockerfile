@@ -76,8 +76,6 @@ RUN openssl req -new -x509 -nodes -out upsd.crt -keyout upsd.key -subj "/C=US/ST
 
 RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "echo '=== NUT container starting ==='" >> /entrypoint.sh && \
-    echo "echo 'Listing /etc/nut/sbin/:'" >> /entrypoint.sh && \
-    echo "ls -la /etc/nut/sbin/" >> /entrypoint.sh && \
     echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
     echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
@@ -93,8 +91,6 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "    echo \"Waiting for NUT... attempt \$i\"" >> /entrypoint.sh && \
     echo "    sleep 1" >> /entrypoint.sh && \
     echo "done" >> /entrypoint.sh && \
-    echo "echo 'Dumping variables for debugging:'" >> /entrypoint.sh && \
-    echo "upsc dummyups@127.0.0.1 var list" >> /entrypoint.sh && \
     echo "echo 'Entering main loop...'" >> /entrypoint.sh && \
     echo "wait \$upsd_pid" >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
