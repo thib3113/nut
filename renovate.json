@@ -29,13 +29,11 @@
         {
             "matchPackageNames": ["typescript", "typedoc"],
             "groupName": "typescript and typedoc",
-            "separateMajorReleases": false,
             "automerge": false
         },
         {
             "matchPackageNames": ["typedoc"],
-            "separateMajorReleases": true,
-            "separateMinorReleases": true,
+            "separateMinorPatch": true,
             "automerge": false
         }
     ],
