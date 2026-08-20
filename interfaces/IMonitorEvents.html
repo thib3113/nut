@@ -12,7 +12,7 @@
 <h1>Interface IMonitorEvents</h1></div>
 <div class="tsd-signature"><span class="tsd-signature-keyword">interface</span> <span class="tsd-kind-interface">IMonitorEvents</span> <span class="tsd-signature-symbol">{</span><br/>    <a class="tsd-kind-property" href="#_">&quot;*&quot;</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">event</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span> <span class="tsd-signature-symbol">...</span><span class="tsd-kind-parameter">args</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">any</span><span class="tsd-signature-symbol">[]</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#battery_charge">BATTERY_CHARGE</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">charge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">rawCharge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#battery_runtime">BATTERY_RUNTIME</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">charge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">rawCharge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#bypass">BYPASS</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#cal">CAL</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#commbad">COMMBAD</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#commok">COMMOK</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#fsd">FSD</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#lowbatt">LOWBATT</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#nocomm">NOCOMM</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#notbypass">NOTBYPASS</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#notcal">NOTCAL</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#notoff">NOTOFF</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#off">OFF</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#onbatt">ONBATT</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#online">ONLINE</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#replbatt">REPLBATT</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#shutdown">SHUTDOWN</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#unknown_status">UNKNOWN_STATUS</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">status</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#variable_changed">VARIABLE_CHANGED</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">key</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariablesNames.html" class="tsd-signature-type tsd-kind-type-alias">nutVariablesNames</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">oldValue</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">newValue</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">oldVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">newVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/>    <a class="tsd-kind-property" href="#variables_changed">VARIABLES_CHANGED</a><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><br/>        <span class="tsd-kind-parameter">oldVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/>        <span class="tsd-kind-parameter">newVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span><span class="tsd-signature-symbol">;</span><br/><span class="tsd-signature-symbol">}</span></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L18">src/Monitor.ts:18</a></li></ul></aside>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L18">src/Monitor.ts:18</a></li></ul></aside>
 <section class="tsd-panel-group tsd-index-group">
 <section class="tsd-panel tsd-index-panel">
 <details class="tsd-index-content tsd-accordion" open><summary class="tsd-accordion-summary tsd-index-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="../assets/icons.svg#icon-chevronDown"></use></svg>
@@ -51,7 +51,7 @@
 <div class="tsd-comment tsd-typography"><p>allow to listen to all events</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L121">src/Monitor.ts:121</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L121">src/Monitor.ts:121</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="battery_charge"><span>BATTERY_<wbr/>CHARGE</span><a href="#battery_charge" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">BATTERY_CHARGE</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">charge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">rawCharge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
@@ -75,7 +75,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L88">src/Monitor.ts:88</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L88">src/Monitor.ts:88</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="battery_runtime"><span>BATTERY_<wbr/>RUNTIME</span><a href="#battery_runtime" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">BATTERY_RUNTIME</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">charge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">number</span><span class="tsd-signature-symbol">,</span> <span class="tsd-kind-parameter">rawCharge</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
@@ -99,119 +99,119 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L94">src/Monitor.ts:94</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L94">src/Monitor.ts:94</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="bypass"><span>BYPASS</span><a href="#bypass" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">BYPASS</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>UPS on bypass (powered, not protecting).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L74">src/Monitor.ts:74</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L74">src/Monitor.ts:74</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="cal"><span>CAL</span><a href="#cal" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">CAL</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>UPS calibration in progress.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L58">src/Monitor.ts:58</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L58">src/Monitor.ts:58</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="commbad"><span>COMMBAD</span><a href="#commbad" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">COMMBAD</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>Communication with the UPS was just lost.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L42">src/Monitor.ts:42</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L42">src/Monitor.ts:42</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="commok"><span>COMMOK</span><a href="#commok" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">COMMOK</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>Communication with the UPS has been established.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L38">src/Monitor.ts:38</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L38">src/Monitor.ts:38</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="fsd"><span>FSD</span><a href="#fsd" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">FSD</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>The UPS has been commanded into the &quot;forced shutdown&quot; mode.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L34">src/Monitor.ts:34</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L34">src/Monitor.ts:34</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="lowbatt"><span>LOWBATT</span><a href="#lowbatt" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">LOWBATT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>The UPS battery is low (as determined by the driver).</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L30">src/Monitor.ts:30</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L30">src/Monitor.ts:30</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="nocomm"><span>NOCOMM</span><a href="#nocomm" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">NOCOMM</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>The UPS can’t be contacted for monitoring.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L54">src/Monitor.ts:54</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L54">src/Monitor.ts:54</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="notbypass"><span>NOTBYPASS</span><a href="#notbypass" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">NOTBYPASS</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>UPS no longer on bypass.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L78">src/Monitor.ts:78</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L78">src/Monitor.ts:78</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="notcal"><span>NOTCAL</span><a href="#notcal" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">NOTCAL</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>UPS calibration finished.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L62">src/Monitor.ts:62</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L62">src/Monitor.ts:62</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="notoff"><span>NOTOFF</span><a href="#notoff" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">NOTOFF</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>UPS no longer administratively OFF or asleep.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L70">src/Monitor.ts:70</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L70">src/Monitor.ts:70</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="off"><span>OFF</span><a href="#off" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">OFF</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>UPS administratively OFF or asleep.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L66">src/Monitor.ts:66</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L66">src/Monitor.ts:66</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="onbatt"><span>ONBATT</span><a href="#onbatt" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">ONBATT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>The UPS is on battery.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L26">src/Monitor.ts:26</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L26">src/Monitor.ts:26</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="online"><span>ONLINE</span><a href="#online" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">ONLINE</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>The UPS is back online.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L22">src/Monitor.ts:22</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L22">src/Monitor.ts:22</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="replbatt"><span>REPLBATT</span><a href="#replbatt" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">REPLBATT</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>The UPS needs to have its battery replaced.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L50">src/Monitor.ts:50</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L50">src/Monitor.ts:50</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="shutdown"><span>SHUTDOWN</span><a href="#shutdown" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">SHUTDOWN</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">()</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>The local system is being shut down.</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L46">src/Monitor.ts:46</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L46">src/Monitor.ts:46</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="unknown_status"><span>UNKNOWN_<wbr/>STATUS</span><a href="#unknown_status" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">UNKNOWN_STATUS</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><span class="tsd-kind-parameter">status</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
 <div class="tsd-comment tsd-typography"><p>UPS STATUS IS UNKNOWN</p>
 </div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L82">src/Monitor.ts:82</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L82">src/Monitor.ts:82</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="variable_changed"><span>VARIABLE_<wbr/>CHANGED</span><a href="#variable_changed" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">VARIABLE_CHANGED</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">key</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariablesNames.html" class="tsd-signature-type tsd-kind-type-alias">nutVariablesNames</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">oldValue</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">newValue</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">oldVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">newVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
@@ -244,7 +244,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L103">src/Monitor.ts:103</a></li></ul></aside></section>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L103">src/Monitor.ts:103</a></li></ul></aside></section>
 <section class="tsd-panel tsd-member">
 <h3 class="tsd-anchor-link" id="variables_changed"><span>VARIABLES_<wbr/>CHANGED</span><a href="#variables_changed" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="../assets/icons.svg#icon-anchor"></use></svg></a></h3>
 <div class="tsd-signature"><span class="tsd-kind-property">VARIABLES_CHANGED</span><span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol">(</span><br/>    <span class="tsd-kind-parameter">oldVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/>    <span class="tsd-kind-parameter">newVariables</span><span class="tsd-signature-symbol">:</span> <a href="../types/nutVariables.html" class="tsd-signature-type tsd-kind-type-alias">nutVariables</a><span class="tsd-signature-symbol">,</span><br/><span class="tsd-signature-symbol">)</span> <span class="tsd-signature-symbol">=&gt;</span> <span class="tsd-signature-type">void</span></div>
@@ -268,7 +268,7 @@
 </div></li></ul></div>
 <h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4></li></ul></li></ul></div><aside class="tsd-sources">
 <ul>
-<li>Defined in <a href="https://github.com/thib3113/nut/blob/fd55aa1fa6f97179d15be9dce054fa8f5e8706af/src/Monitor.ts#L115">src/Monitor.ts:115</a></li></ul></aside></section></section></details></div>
+<li>Defined in <a href="https://github.com/thib3113/nut/blob/8f6cf3c86cb9c1e584aba53226aea04c0b2a93c0/src/Monitor.ts#L115">src/Monitor.ts:115</a></li></ul></aside></section></section></details></div>
 <div class="col-sidebar">
 <div class="page-menu">
 <div class="tsd-navigation settings">
