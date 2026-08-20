@@ -166,3 +166,16 @@ export const checkError = (message: string): string => {
 
     return message;
 };
+
+/**
+ * Escapes a command part for safe transmission over the NUT protocol.
+ * - Escapes backslashes: \ → \\
+ * - Escapes double quotes: " → \"
+ * - Removes newlines and carriage returns to prevent command injection
+ */
+export const escapeCommandPart = (part: string): string => {
+    return part
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/[\r\n]/g, '');
+};

@@ -25,7 +25,7 @@ import {
     VarNotSupportedError,
     UnknownError
 } from '../src/Errors/index.js';
-import { errorMessageToError, parseList, variableTypeConverter } from '../src/utils.js';
+import { errorMessageToError, escapeCommandPart, parseList, variableTypeConverter } from '../src/utils.js';
 
 describe('utils', () => {
     describe('parseList', () => {
@@ -129,6 +129,58 @@ describe('utils', () => {
             } catch (e) {
                 expect(e).toBeInstanceOf(UnknownError);
             }
+        });
+    });
+
+    describe('escapeCommandPart', () => {
+        it('should return a simple string unchanged', () => {
+            expect(escapeCommandPart('hello')).toBe('hello');
+        });
+
+        it('should return empty string unchanged', () => {
+            expect(escapeCommandPart('')).toBe('');
+        });
+
+        it('should escape backslashes', () => {
+            expect(escapeCommandPart('back\\slash')).toBe('back\\\\slash');
+        });
+
+        it('should escape double quotes', () => {
+            expect(escapeCommandPart('say "hello"')).toBe('say \\"hello\\"');
+        });
+
+        it('should remove newline characters', () => {
+            expect(escapeCommandPart('line1\nline2')).toBe('line1line2');
+        });
+
+        it('should remove carriage return characters', () => {
+            expect(escapeCommandPart('line1\rline2')).toBe('line1line2');
+        });
+
+        it('should remove CRLF sequences', () => {
+            expect(escapeCommandPart('line1\r\nline2')).toBe('line1line2');
+        });
+
+        it('should handle combined dangerous characters', () => {
+            expect(escapeCommandPart('a\\b"c\nd')).toBe('a\\\\b\\"cd');
+        });
+
+        it('should prevent command injection via quotes in username', () => {
+            // Attacker tries: USERNAME admin" SET VAR ups.status "OL
+            // Without escaping, the quotes would break the command structure
+            const malicious = 'admin" SET VAR ups.status "OL';
+            const escaped = escapeCommandPart(malicious);
+            // The escaped value must NOT contain unescaped quotes
+            expect(escaped).toBe('admin\\" SET VAR ups.status \\"OL');
+        });
+
+        it('should prevent command injection via newline in password', () => {
+            // Attacker tries: PASSWORD mypass\nSET VAR ups.status OL
+            // Without escaping, the newline would inject a new command
+            const malicious = 'mypass\nSET VAR ups.status OL';
+            const escaped = escapeCommandPart(malicious);
+            expect(escaped).toBe('mypassSET VAR ups.status OL');
+            expect(escaped).not.toContain('\n');
         });
     });
 });

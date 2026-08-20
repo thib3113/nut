@@ -3,7 +3,7 @@ import net, { Socket } from 'node:net';
 // @ts-ignore
 import queue from 'async/queue.js';
 import type { QueueObject } from './QueueObject.js';
-import { checkError, parseLine, parseList } from './utils.js';
+import { checkError, parseLine, parseList, escapeCommandPart } from './utils.js';
 import tls from 'node:tls';
 import type { ConnectionOptions, TLSSocket } from 'tls';
 
@@ -77,8 +77,13 @@ export class RawNUTClient {
             if (receivedString.includes('LIST')) {
                 const lastBegin = receivedString.lastIndexOf('BEGIN LIST');
                 const lastEnd = receivedString.lastIndexOf('END LIST');
-                debug('LIST detection: receivedString=%o, lastBegin=%o, lastEnd=%o, receivingList=%o', 
-                    receivedString, lastBegin, lastEnd, this.receivingList);
+                debug(
+                    'LIST detection: receivedString=%o, lastBegin=%o, lastEnd=%o, receivingList=%o',
+                    receivedString,
+                    lastBegin,
+                    lastEnd,
+                    this.receivingList
+                );
                 if (lastBegin > lastEnd && (lastBegin === 0 || receivedString[lastBegin - 1] === '\n')) {
                     this.receivingList = true;
                     debug('Setting receivingList=true based on chunk');
@@ -180,7 +185,7 @@ export class RawNUTClient {
     async send(cmdParts: Array<string>, timeout?: number): Promise<string> {
         return this.cmdQueue
             .pushAsync<string>({
-                cmd: cmdParts.map((p) => `"${p.replace('\\', '\\\\')}"`).join(' '),
+                cmd: cmdParts.map((p) => `"${escapeCommandPart(p)}"`).join(' '),
                 timeout
             })
             .then((message: string): string => checkError(message));

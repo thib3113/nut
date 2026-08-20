@@ -47,10 +47,10 @@ describe('connection tests', () => {
             }
         });
 
-it('should succeed with connection', async () => {
+        it('should succeed with connection', async () => {
             await client.connect('user', 'secret');
             await client.runCommand(testUPSName, 'load.off');
-          });
+        });
 
         it('should fail if invalid username', async () => {
             await client.connect('baduser', 'secret');
@@ -125,9 +125,9 @@ describe('usage tests', () => {
     });
 
     describe('commands', () => {
-it('should list commands', async () => {
+        it('should list commands', async () => {
             expect(await client.listCommands(testUPSName)).toContain('load.off');
-          });
+        });
         it('should get command description', async () => {
             expect(await client.getCommandDescription(testUPSName, 'driver.reload')).toBe(
                 'Reload running driver configuration from the file system (only works for changes in some options)'
@@ -150,18 +150,18 @@ it('should list commands', async () => {
             expect(await client.getVariable(testUPSName, 'device.model')).toStrictEqual('Dummy UPS');
         });
 
-it('should get variable type', async () => {
-        // RawNUTClient returns the raw protocol value: the type, possibly with a max length suffix (STRING:32)
-        expect(await client.getVariableType(testUPSName, 'device.mfr')).toMatch(/^STRING(:\d+)?$/);
+        it('should get variable type', async () => {
+            // RawNUTClient returns the raw protocol value: the type, possibly with a max length suffix (STRING:32)
+            expect(await client.getVariableType(testUPSName, 'device.mfr')).toMatch(/^STRING(:\d+)?$/);
 
-        // NUTClient parses that suffix and exposes the max length: { type: 'STRING', maxLength: 32 }
-        const nutClient = new NUTClient('127.0.0.1', 3493);
-        await nutClient.connect('user', 'secret');
-        const type = await nutClient.getVariableType(testUPSName, 'device.mfr');
-        expect(type.type).toBe('STRING');
-        expect(type.maxLength).toBeGreaterThan(0);
-        await nutClient.logout();
-      });
+            // NUTClient parses that suffix and exposes the max length: { type: 'STRING', maxLength: 32 }
+            const nutClient = new NUTClient('127.0.0.1', 3493);
+            await nutClient.connect('user', 'secret');
+            const type = await nutClient.getVariableType(testUPSName, 'device.mfr');
+            expect(type.type).toBe('STRING');
+            expect(type.maxLength).toBeGreaterThan(0);
+            await nutClient.logout();
+        });
 
         it('should get variable description', async () => {
             expect(await client.getVariableDescription(testUPSName, 'device.mfr')).toBe('Description unavailable');

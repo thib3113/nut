@@ -11,6 +11,9 @@ on:
       SONAR_TOKEN:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   build-docker:
     runs-on: ubuntu-latest
@@ -22,6 +25,7 @@ jobs:
     permissions:
       checks: write
       actions: read
+      contents: read
     runs-on: ubuntu-latest
 
     strategy:
