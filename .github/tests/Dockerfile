@@ -78,14 +78,19 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "echo '=== NUT container starting ==='" >> /entrypoint.sh && \
     echo "echo 'Listing /etc/nut/etc/:'" >> /entrypoint.sh && \
     echo "ls -la /etc/nut/etc/" >> /entrypoint.sh && \
-    echo "echo 'Searching for dummy-ups binary...'" >> /entrypoint.sh && \
-    echo "which dummy-ups || echo 'dummy-ups not found in PATH'" >> /entrypoint.sh && \
-    echo "ls -la /etc/nut/sbin/ || echo '/etc/nut/sbin not found'" >> /entrypoint.sh && \
-    echo "ls -la /etc/nut/bin/ || echo '/etc/nut/bin not found'" >> /entrypoint.sh && \
-    echo "echo 'Starting dummy-ups driver in debug mode...'" >> /entrypoint.sh && \
-    echo "/var/lib/ups/driver/dummy-ups -a dummyups -DD -u nut &" >> /entrypoint.sh && \
-    echo "echo 'Driver debug started with pid \$!'" >> /entrypoint.sh && \
-    echo "sleep 3" >> /entrypoint.sh && \
+    echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
+    echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
+    echo "echo 'upsdrvctl started, checking status...'" >> /entrypoint.sh && \
+    echo "echo 'Waiting for driver to be ready...'" >> /entrypoint.sh && \
+    echo "for i in \$(seq 1 30); do" >> /entrypoint.sh && \
+    echo "    if /etc/nut/sbin/upsc dummyups@localhost >/dev/null 2>&1; then" >> /entrypoint.sh && \
+    echo "        echo 'Driver is ready.'" >> /entrypoint.sh && \
+    echo "        /etc/nut/sbin/upsc dummyups@localhost var list" >> /entrypoint.sh && \
+    echo "        break" >> /entrypoint.sh && \
+    echo "    fi" >> /entrypoint.sh && \
+    echo "    echo \"Waiting for driver... attempt \$i\"" >> /entrypoint.sh && \
+    echo "    sleep 1" >> /entrypoint.sh && \
+    echo "done" >> /entrypoint.sh && \
     echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsd -D &" >> /entrypoint.sh && \
     echo "upsd_pid=\$!" >> /entrypoint.sh && \
