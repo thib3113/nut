@@ -23,5 +23,6 @@
         }
     ],
     "stabilityDays": 3,
-    "assignees": ["thib3113"]
+    "assignees": ["thib3113"],
+    "githubActionsPinDigest": true
 }
