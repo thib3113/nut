@@ -24,5 +24,8 @@
     ],
     "stabilityDays": 3,
     "assignees": ["thib3113"],
-    "githubActionsPinDigest": true
+    "gitHubActions": {
+        "enabled": true,
+        "pinDigests": true
+    }
 }
