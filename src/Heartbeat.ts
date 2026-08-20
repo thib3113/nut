@@ -1,4 +1,4 @@
-import { setInterval } from 'timers/promises';
+import { setInterval } from 'node:timers/promises';
 
 export class Heartbeat {
     private timer?: AsyncIterable<null>;

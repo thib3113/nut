@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NUTClient, RawNUTClient } from '../src/index.js';
 import { setTimeout } from 'node:timers/promises';
-import { TLSSocket } from 'tls';
-import { setInterval } from 'timers/promises';
+import { TLSSocket } from 'node:tls';
+import { setInterval } from 'node:timers/promises';
 
 const testUPSName = 'dummyups';
 
@@ -103,7 +103,7 @@ describe('usage tests', () => {
     });
 
     it('should get netversion', async () => {
-        expect(await client.netVersion()).toMatch(/[0-9]+\.[0-9]+/);
+        expect(await client.netVersion()).toMatch(/\d+\.\d+/);
     });
 
     it('should show help', async () => {
@@ -115,7 +115,7 @@ describe('usage tests', () => {
         const clients = await client.listClients(testUPSName);
         expect(clients.length).toBe(1);
         //will match the current ip of the client
-        expect(clients[0]).toMatch(/^((25[0-5]|2[0-4]\d|[01]?\d?\d)\.?\b){4}$/);
+        expect(clients[0]).toMatch(/^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/);
     });
 
     it('should get num logins', async () => {

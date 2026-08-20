@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NUTClient as NUTClientType } from '../src/NUTClient.js';
 import type { RawNUTClient as RawNUTClientType } from '../src/RawNUTClient.js';
-import type { ConnectionOptions } from 'tls';
+import type { ConnectionOptions } from 'node:tls';
 import crypto from 'node:crypto';
 
 const testUPSName = 'dummyups';
@@ -54,13 +54,13 @@ const { NUTClient } = await import('../src/NUTClient.js');
 
 describe('NutClient.constructor', () => {
     it('should pass parameters', async () => {
-        new NUTClient('1.2.3.4', 5555);
+        const client = new NUTClient('1.2.3.4', 5555);
 
         expect(mockRawNutClientConstructor).toHaveBeenCalledWith('1.2.3.4', 5555);
     });
 
     it('should pass default port', async () => {
-        new NUTClient('1.2.3.4');
+        const client = new NUTClient('1.2.3.4');
 
         expect(mockRawNutClientConstructor).toHaveBeenCalledWith('1.2.3.4', 3493);
     });

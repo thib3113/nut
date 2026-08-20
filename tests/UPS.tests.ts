@@ -37,8 +37,8 @@ const { NUTClient } = await import('../src/NUTClient.js');
 describe('UPS', () => {
     describe('constructor', () => {
         it('should construct', async () => {
-            new UPS(new NUTClient('127.0.0.1', 3493), 'dummyups', 'testups');
-            new UPS(new NUTClient('127.0.0.1', 3493), 'dummyups', '');
+            const ups1 = new UPS(new NUTClient('127.0.0.1', 3493), 'dummyups', 'testups');
+            const ups2 = new UPS(new NUTClient('127.0.0.1', 3493), 'dummyups', '');
         });
 
         it('should avoid empty name', async () => {

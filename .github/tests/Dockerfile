@@ -3,36 +3,36 @@ FROM debian:bullseye-slim
 ENV NUT_VERSION=2.8.2
 
 RUN apt update && apt install --no-install-recommends -y \
-    build-essential \
-    libssl-dev \
-    pkg-config \
-    libtool \
-    automake \
     autoconf \
-    curl \
-    openssl \
+    automake \
+    build-essential \
     ca-certificates \
+    curl \
+    libssl-dev \
+    libtool \
+    openssl \
+    pkg-config \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
-RUN curl --proto "=https" -L https://github.com/networkupstools/nut/releases/download/v${NUT_VERSION}/nut-${NUT_VERSION}.tar.gz -o /tmp/nut-${NUT_VERSION}.tar.gz
+ADD https://github.com/networkupstools/nut/releases/download/v${NUT_VERSION}/nut-${NUT_VERSION}.tar.gz /tmp/nut-${NUT_VERSION}.tar.gz
 
-RUN tar xzf /tmp/nut-${NUT_VERSION}.tar.gz -C /usr/src/
+RUN tar xzf "/tmp/nut-${NUT_VERSION}.tar.gz" -C /usr/src/
 
 WORKDIR /usr/src/nut-${NUT_VERSION}
 
 RUN ./autogen.sh
-
-RUN ./configure \
+ && \
+    ./configure \
         --with-openssl \
         --prefix=/etc/nut \
         --with-user=nut \
-        --with-group=nut
-RUN make
-RUN make install
-
-RUN addgroup --system nut && adduser --system nut --group
-
-RUN echo 'device.mfr: Dummy Manufacturer' > /etc/nut/etc/dummyups.dev && \
+        --with-group=nut && \
+    make && \
+    make install
+ && \
+    addgroup --system nut && adduser --system nut --group
+ && \
+    echo 'device.mfr: Dummy Manufacturer' > /etc/nut/etc/dummyups.dev && \
     echo 'device.model: Dummy UPS' >> /etc/nut/etc/dummyups.dev && \
     echo 'device.type: ups' >> /etc/nut/etc/dummyups.dev && \
     echo 'ups.status: OL' >> /etc/nut/etc/dummyups.dev && \
@@ -50,8 +50,8 @@ RUN echo 'device.mfr: Dummy Manufacturer' > /etc/nut/etc/dummyups.dev && \
     echo 'actions = fsd' >> /etc/nut/etc/upsd.users && \
     echo 'upsmon primary' >> /etc/nut/etc/upsd.users && \
     echo 'instcmds = all' >> /etc/nut/etc/upsd.users
-
-RUN echo 'NOTIFYFLAG ONLINE    SYSLOG' > /etc/nut/etc/upsmon.conf && \
+ && \
+    echo 'NOTIFYFLAG ONLINE    SYSLOG' > /etc/nut/etc/upsmon.conf && \
     echo 'NOTIFYFLAG ONBATT    SYSLOG' >> /etc/nut/etc/upsmon.conf && \
     echo 'NOTIFYFLAG LOWBATT   SYSLOG' >> /etc/nut/etc/upsmon.conf && \
     echo 'NOTIFYFLAG FSD       SYSLOG' >> /etc/nut/etc/upsmon.conf && \
@@ -60,39 +60,40 @@ RUN echo 'NOTIFYFLAG ONLINE    SYSLOG' > /etc/nut/etc/upsmon.conf && \
     echo 'NOTIFYFLAG SHUTDOWN  SYSLOG' >> /etc/nut/etc/upsmon.conf && \
     echo 'NOTIFYFLAG REPLBATT  SYSLOG' >> /etc/nut/etc/upsmon.conf && \
     echo 'NOTIFYFLAG NOCOMM    SYSLOG' >> /etc/nut/etc/upsmon.conf
-
-RUN mkdir -p /var/run/nut /etc/nut/certs/clients /var/state/ups /clients && \
+ && \
+    mkdir -p /var/run/nut /etc/nut/certs/clients /var/state/ups /clients && \
     chown -R nut:nut /var/run/nut /etc/nut /var/state/ups && \
     chmod 700 /var/run/nut /etc/nut /var/state/ups /etc/nut/etc/upsd.conf /etc/nut/etc/upsd.users
-
-RUN openssl req -new -x509 -nodes -out upsd.crt -keyout upsd.key -subj "/C=US/ST=State/L=City/O=Org/OU=IT/CN=localhost" && \
-    cp upsd.crt /etc/nut/certs/clients/$(openssl x509 -hash -noout -in upsd.crt).0 && \
+ && \
+    openssl req -new -x509 -nodes -out upsd.crt -keyout upsd.key \
+        -subj "/C=US/ST=State/L=City/O=Org/OU=IT/CN=localhost" && \
+    cp upsd.crt "/etc/nut/certs/clients/$(openssl x509 -hash -noout -in upsd.crt).0" && \
     cp upsd.crt /clients/client.crt && \
     cat upsd.crt upsd.key > upsd.pem && \
     chown nut:nut upsd.pem /etc/nut/certs/clients/* && \
     chmod 600 upsd.pem /etc/nut/certs/clients/* && \
     mv upsd.pem /etc/nut/certs/ && \
     chmod 700 /etc/nut/certs/*
-
-RUN echo "#!/bin/sh" > /entrypoint.sh && \
+ && \
+    echo "#!/bin/sh" > /entrypoint.sh && \
     echo "echo '=== NUT container starting ==='" >> /entrypoint.sh && \
     echo "echo 'Starting upsdrvctl...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsdrvctl start" >> /entrypoint.sh && \
     echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
     echo "/etc/nut/sbin/upsd -D &" >> /entrypoint.sh && \
     echo "upsd_pid=\$!" >> /entrypoint.sh && \
-    echo "echo 'upsd started with pid \$upsd_pid'" >> /entrypoint.sh && \
+    echo "echo "upsd started with pid \"\${upsd_pid}\""" >> /entrypoint.sh && \
     echo "echo 'Waiting for NUT to be ready...'" >> /entrypoint.sh && \
     echo "for i in \$(seq 1 30); do" >> /entrypoint.sh && \
     echo "    if /etc/nut/sbin/upsc dummyups@127.0.0.1 >/dev/null 2>&1; then" >> /entrypoint.sh && \
     echo "        echo 'NUT is ready.'" >> /entrypoint.sh && \
     echo "        break" >> /entrypoint.sh && \
     echo "    fi" >> /entrypoint.sh && \
-    echo "    echo \"Waiting for NUT... attempt \$i\"" >> /entrypoint.sh && \
+    echo "    echo \"Waiting for NUT... attempt \"\${i}\"\"" >> /entrypoint.sh && \
     echo "    sleep 1" >> /entrypoint.sh && \
     echo "done" >> /entrypoint.sh && \
     echo "echo 'Entering main loop...'" >> /entrypoint.sh && \
-    echo "wait \$upsd_pid" >> /entrypoint.sh && \
+    echo "wait \"\${upsd_pid}\"" >> /entrypoint.sh && \
     chmod +x /entrypoint.sh
 
 WORKDIR /etc/nut
