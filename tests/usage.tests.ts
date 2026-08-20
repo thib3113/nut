@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { RawNUTClient } from '../src/index.js';
+import { NUTClient, RawNUTClient } from '../src/index.js';
 import { setTimeout } from 'node:timers/promises';
 import { TLSSocket } from 'tls';
 import { setInterval } from 'timers/promises';
@@ -151,8 +151,16 @@ it('should list commands', async () => {
         });
 
 it('should get variable type', async () => {
-        // STRING is the type for variables added via definition file
-        expect(await client.getVariableType(testUPSName, 'device.mfr')).toBe('STRING');
+        // RawNUTClient returns the raw protocol value: the type, possibly with a max length suffix (STRING:32)
+        expect(await client.getVariableType(testUPSName, 'device.mfr')).toMatch(/^STRING(:\d+)?$/);
+
+        // NUTClient parses that suffix and exposes the max length: { type: 'STRING', maxLength: 32 }
+        const nutClient = new NUTClient('127.0.0.1', 3493);
+        await nutClient.connect('user', 'secret');
+        const type = await nutClient.getVariableType(testUPSName, 'device.mfr');
+        expect(type.type).toBe('STRING');
+        expect(type.maxLength).toBeGreaterThan(0);
+        await nutClient.logout();
       });
 
         it('should get variable description', async () => {
