@@ -83,7 +83,7 @@ RUN echo "#!/bin/sh" > /entrypoint.sh && \
     echo "ls -la /etc/nut/sbin/ || echo '/etc/nut/sbin not found'" >> /entrypoint.sh && \
     echo "ls -la /etc/nut/bin/ || echo '/etc/nut/bin not found'" >> /entrypoint.sh && \
     echo "echo 'Starting dummy-ups driver in debug mode...'" >> /entrypoint.sh && \
-    echo "dummy-ups -a dummyups -DD -u nut &" >> /entrypoint.sh && \
+    echo "/var/lib/ups/driver/dummy-ups -a dummyups -DD -u nut &" >> /entrypoint.sh && \
     echo "echo 'Driver debug started with pid \$!'" >> /entrypoint.sh && \
     echo "sleep 3" >> /entrypoint.sh && \
     echo "echo 'Starting upsd...'" >> /entrypoint.sh && \
