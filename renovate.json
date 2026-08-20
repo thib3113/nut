@@ -13,7 +13,8 @@
         "group:monorepos",
         "group:recommended",
         "workarounds:all",
-        ":disableDependencyDashboard"
+        ":disableDependencyDashboard",
+        "helpers:pinGitHubActionDigests"
     ],
     "packageRules": [
         {
@@ -23,9 +24,5 @@
         }
     ],
     "stabilityDays": 3,
-    "assignees": ["thib3113"],
-    "gitHubActions": {
-        "enabled": true,
-        "pinDigests": true
-    }
+    "assignees": ["thib3113"]
 }
