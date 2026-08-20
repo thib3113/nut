@@ -45,7 +45,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pnpm install
+          pnpm install --ignore-scripts
           pnpm run build
 
       - name: build documentation

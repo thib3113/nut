@@ -2,7 +2,7 @@ FROM debian:bullseye-slim
 
 ENV NUT_VERSION=2.8.2
 
-RUN apt update && apt install -y \
+RUN apt update && apt install --no-install-recommends -y \
     build-essential \
     libssl-dev \
     pkg-config \
@@ -14,7 +14,7 @@ RUN apt update && apt install -y \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -L https://github.com/networkupstools/nut/releases/download/v${NUT_VERSION}/nut-${NUT_VERSION}.tar.gz -o /tmp/nut-${NUT_VERSION}.tar.gz
+RUN curl --proto "=https" -L https://github.com/networkupstools/nut/releases/download/v${NUT_VERSION}/nut-${NUT_VERSION}.tar.gz -o /tmp/nut-${NUT_VERSION}.tar.gz
 
 RUN tar xzf /tmp/nut-${NUT_VERSION}.tar.gz -C /usr/src/
 

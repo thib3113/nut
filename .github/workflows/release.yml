@@ -49,7 +49,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --ignore-scripts
 
   build:
     needs: [ prepare, ci ]
@@ -87,7 +87,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --ignore-scripts
         shell: bash
 
       - name: Compare npm with local (versions)
