@@ -11,9 +11,9 @@ RUN apt update && apt install --no-install-recommends -y \
     autoconf \
     curl \
     openssl \
+    ca-certificates \
     && apt clean \
     && rm -rf /var/lib/apt/lists/*
-
 RUN curl --proto "=https" -L https://github.com/networkupstools/nut/releases/download/v${NUT_VERSION}/nut-${NUT_VERSION}.tar.gz -o /tmp/nut-${NUT_VERSION}.tar.gz
 
 RUN tar xzf /tmp/nut-${NUT_VERSION}.tar.gz -C /usr/src/
