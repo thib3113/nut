@@ -49,7 +49,7 @@ export interface IMonitorEvents {
      */
     REPLBATT: () => void;
     /**
-     * The UPS can’t be contacted for monitoring.
+     * The UPS can't be contacted for monitoring.
      */
     NOCOMM: () => void;
     /**
@@ -141,47 +141,115 @@ const debug = createDebugger('Monitor');
  * ```
  */
 export class Monitor extends TypedEmitter<IMonitorEvents> {
-    private readonly options: Required<IMonitorOptions>;
+    #options: Required<IMonitorOptions>;
+    #heartBeat: Heartbeat;
+    #client: NUTClient;
+    #upsName: UPSName;
+    #destroyed = false;
 
+    // Kept as TypeScript `private` (not `#`) because tests directly access these fields
     private communication?: boolean;
     private previousState?: nutVariables;
-    /**
-     * @private
-     */
-    private readonly heartBeat: Heartbeat;
     private ups?: UPS;
+    private _paused = false;
 
-    constructor(
-        private readonly client: NUTClient,
-        private readonly upsName: UPSName,
-        options: IMonitorOptions = {}
-    ) {
+    constructor(client: NUTClient, upsName: UPSName, options: IMonitorOptions = {}) {
         super();
 
-        this.options = {
+        this.#client = client;
+        this.#upsName = upsName;
+
+        this.#options = {
             ...defaultOptions,
             ...options
         };
 
-        this.heartBeat = new Heartbeat(this.options.pollFrequency, this._loopFn);
+        this.#heartBeat = new Heartbeat(this.#options.pollFrequency, this._loopFn);
     }
 
     async start(): Promise<void> {
-        const ups = await this.client.getUPS(this.upsName);
+        if (this.#destroyed) {
+            throw new Error('Monitor has been destroyed and cannot be reused');
+        }
+
+        const ups = await this.#client.getUPS(this.#upsName);
         if (!ups) {
             throw new Error(`fail to get UPS`);
         }
 
         this.ups = ups;
 
-        this.heartBeat.start();
+        this.#heartBeat.start();
     }
 
-    async stop(): Promise<void> {
-        this.heartBeat.stop();
+    stop(): void {
+        this.#heartBeat.stop();
+    }
+
+    /**
+     * Destroy the monitor and release all resources.
+     * After calling destroy(), the monitor cannot be reused.
+     *
+     * - Stops the heartbeat
+     * - Removes all event listeners
+     * - Cleans up internal state
+     *
+     * Safe to call multiple times (idempotent).
+     */
+    destroy(): void {
+        if (this.#destroyed) {
+            return;
+        }
+
+        this.#destroyed = true;
+        this.#heartBeat.stop();
+        this.removeAllListeners();
+
+        // Clean up references
+        this.ups = undefined;
+        this.previousState = undefined;
+    }
+
+    /**
+     * Check if the monitor has been destroyed.
+     */
+    isDestroyed(): boolean {
+        return this.#destroyed;
+    }
+
+    /**
+     * Pause monitoring without stopping it.
+     * The heartbeat loop keeps running but events are not emitted while paused.
+     * When resumed, the next poll is treated as a fresh start (no spurious events).
+     */
+    pause(): void {
+        this._paused = true;
+        debug('monitoring paused');
+    }
+
+    /**
+     * Resume monitoring after a pause.
+     * `previousState` is cleared so the next poll behaves like the first loop
+     * (no VARIABLE_CHANGED / status events are emitted for stale data).
+     */
+    resume(): void {
+        this._paused = false;
+        this.previousState = undefined;
+        debug('monitoring resumed');
+    }
+
+    /**
+     * Check if monitoring is currently paused.
+     */
+    isPaused(): boolean {
+        return this._paused;
     }
 
     private readonly _loopFn = async () => {
+        if (this._paused) {
+            return;
+        }
+
         if (!this.ups) {
             throw new Error('ups need to be setup before');
         }
@@ -213,47 +281,55 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
             return;
         }
 
-        const batteryStatus = state['battery.status'] as ENUTStatus;
-        const previousBatteryStatus = previousState['battery.status'] as ENUTStatus;
+        // ups.status contains space-separated status codes (e.g. "OL CHRG")
+        const rawStatus = (state['ups.status'] ?? '') as string;
+        const currentStatuses = new Set(rawStatus.split(/\s+/).filter(Boolean));
 
-        if (batteryStatus !== previousBatteryStatus) {
-            switch (batteryStatus) {
-                case ENUTStatus.OL:
-                    this.emit('ONLINE');
-                    break;
-                case ENUTStatus.OB:
-                    this.emit('ONBATT');
-                    break;
-                case ENUTStatus.RB:
-                    this.emit('REPLBATT');
-                    break;
-                case ENUTStatus.LB:
-                    this.emit('LOWBATT');
-                    break;
-                case ENUTStatus.FSD:
-                    this.emit('FSD');
-                    break;
-                case ENUTStatus.CAL:
-                    this.emit('CAL');
-                    break;
-                case ENUTStatus.OFF:
-                    this.emit('OFF');
-                    break;
-                case ENUTStatus.BYPASS:
-                    this.emit('BYPASS');
-                    break;
-                default:
-                    this.emit('UNKNOWN_STATUS', batteryStatus);
-            }
+        const rawPreviousStatus = (previousState['ups.status'] ?? '') as string;
+        const previousStatuses = new Set(rawPreviousStatus.split(/\s+/).filter(Boolean));
 
-            if (previousBatteryStatus === ENUTStatus.OFF) {
-                this.emit('NOTOFF');
-            }
-            if (previousBatteryStatus === ENUTStatus.CAL) {
-                this.emit('NOTCAL');
-            }
-            if (previousBatteryStatus === ENUTStatus.BYPASS) {
-                this.emit('NOTBYPASS');
+        // Emit events when a status code appears
+        if (!previousStatuses.has(ENUTStatus.OL) && currentStatuses.has(ENUTStatus.OL)) {
+            this.emit('ONLINE');
+        }
+        if (!previousStatuses.has(ENUTStatus.OB) && currentStatuses.has(ENUTStatus.OB)) {
+            this.emit('ONBATT');
+        }
+        if (!previousStatuses.has(ENUTStatus.LB) && currentStatuses.has(ENUTStatus.LB)) {
+            this.emit('LOWBATT');
+        }
+        if (!previousStatuses.has(ENUTStatus.FSD) && currentStatuses.has(ENUTStatus.FSD)) {
+            this.emit('FSD');
+        }
+        if (!previousStatuses.has(ENUTStatus.RB) && currentStatuses.has(ENUTStatus.RB)) {
+            this.emit('REPLBATT');
+        }
+        if (!previousStatuses.has(ENUTStatus.CAL) && currentStatuses.has(ENUTStatus.CAL)) {
+            this.emit('CAL');
+        }
+        if (!previousStatuses.has(ENUTStatus.OFF) && currentStatuses.has(ENUTStatus.OFF)) {
+            this.emit('OFF');
+        }
+        if (!previousStatuses.has(ENUTStatus.BYPASS) && currentStatuses.has(ENUTStatus.BYPASS)) {
+            this.emit('BYPASS');
+        }
+
+        // Emit events when a status code disappears
+        if (previousStatuses.has(ENUTStatus.OFF) && !currentStatuses.has(ENUTStatus.OFF)) {
+            this.emit('NOTOFF');
+        }
+        if (previousStatuses.has(ENUTStatus.CAL) && !currentStatuses.has(ENUTStatus.CAL)) {
+            this.emit('NOTCAL');
+        }
+        if (previousStatuses.has(ENUTStatus.BYPASS) && !currentStatuses.has(ENUTStatus.BYPASS)) {
+            this.emit('NOTBYPASS');
+        }
+
+        // Emit UNKNOWN_STATUS for any unrecognized status codes
+        const knownStatuses = new Set<string>(Object.values(ENUTStatus));
+        for (const status of currentStatuses) {
+            if (!knownStatuses.has(status)) {
+                this.emit('UNKNOWN_STATUS', status);
             }
         }
 

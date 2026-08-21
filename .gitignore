@@ -308,6 +308,8 @@ $RECYCLE.BIN/
 
 /lib
 
+/scripts
+
 /coverage
 /.scannerwork
 /docs

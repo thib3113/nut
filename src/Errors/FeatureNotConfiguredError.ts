@@ -1,8 +1,10 @@
-export class FeatureNotConfiguredError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class FeatureNotConfiguredError extends NUTProtocolError {
     public constructor() {
         super(
-            'This instance of upsd hasn’t been configured properly to allow the requested feature to operate. This is also limited to STARTTLS for now.'
+            "This instance of upsd hasn't been configured properly to allow the requested feature to operate. This is also limited to STARTTLS for now."
         );
-        Error.captureStackTrace(this, this.constructor);
+        this.name = 'FeatureNotConfiguredError';
     }
 }

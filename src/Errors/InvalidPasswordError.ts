@@ -1,6 +1,8 @@
-export class InvalidPasswordError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class InvalidPasswordError extends NUTProtocolError {
     public constructor() {
         super('The client sent an invalid PASSWORD . perhaps an empty one.');
-        Error.captureStackTrace(this, this.constructor);
+        this.name = 'InvalidPasswordError';
     }
 }

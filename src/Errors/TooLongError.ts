@@ -1,6 +1,8 @@
-export class TooLongError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class TooLongError extends NUTProtocolError {
     public constructor() {
         super('The requested value in a SET command is too long.');
-        Error.captureStackTrace(this, this.constructor);
+        this.name = 'TooLongError';
     }
 }

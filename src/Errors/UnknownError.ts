@@ -1,6 +1,8 @@
-export class UnknownError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class UnknownError extends NUTProtocolError {
     public constructor(message: string) {
         super(`Unknown Error : ${message}`);
-        Error.captureStackTrace(this, this.constructor);
+        this.name = 'UnknownError';
     }
 }

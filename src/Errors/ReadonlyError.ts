@@ -1,6 +1,8 @@
-export class ReadonlyError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class ReadonlyError extends NUTProtocolError {
     public constructor() {
         super('The requested variable in a SET command is not writable.');
-        Error.captureStackTrace(this, this.constructor);
+        this.name = 'ReadonlyError';
     }
 }

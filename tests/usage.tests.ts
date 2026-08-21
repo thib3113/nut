@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { NUTClient, RawNUTClient } from '../src/index.js';
 import { setTimeout } from 'node:timers/promises';
+import { Socket } from 'node:net';
 import { TLSSocket } from 'node:tls';
 import { setInterval } from 'node:timers/promises';
 
@@ -10,8 +11,7 @@ describe('connection tests', () => {
     let client: RawNUTClient;
 
     afterEach(async () => {
-        // @ts-expect-error
-        if (client?._tcpClient.readyState != 'closed') {
+        if ((client?.client as Socket)?.readyState != 'closed') {
             await client?.logout();
         }
     });
@@ -29,8 +29,7 @@ describe('connection tests', () => {
         expect(await client.logout()).toBe('OK Goodbye');
 
         await setTimeout(10);
-        // @ts-ignore
-        expect(client._tcpClient.readyState).toBe('closed');
+        expect((client.client as Socket).readyState).toBe('closed');
         expect(client.connected).toBe(false);
     });
 
@@ -41,8 +40,7 @@ describe('connection tests', () => {
         });
 
         afterEach(async () => {
-            // @ts-expect-error
-            if (client?._tcpClient.readyState != 'closed') {
+            if ((client?.client as Socket)?.readyState != 'closed') {
                 await client?.logout();
             }
         });
@@ -55,14 +53,14 @@ describe('connection tests', () => {
         it('should fail if invalid username', async () => {
             await client.connect('baduser', 'secret');
             await expect(() => client.runCommand(testUPSName, 'driver.reload')).rejects.toThrow(
-                'The client’s host and/or authentication details (username, password) are not sufficient to execute the requested command.'
+                "The client's host and/or authentication details (username, password) are not sufficient to execute the requested command."
             );
         });
 
         it('should fail if invalid password', async () => {
             await client.connect('user', 'badsecret');
             await expect(() => client.runCommand(testUPSName, 'driver.reload')).rejects.toThrow(
-                'The client’s host and/or authentication details (username, password) are not sufficient to execute the requested command.'
+                "The client's host and/or authentication details (username, password) are not sufficient to execute the requested command."
             );
         });
     });
@@ -76,8 +74,7 @@ describe('usage tests', () => {
     });
 
     afterEach(async () => {
-        // @ts-expect-error
-        if (client?._tcpClient.readyState != 'closed') {
+        if ((client?.client as Socket)?.readyState != 'closed') {
             await client?.logout();
         }
 

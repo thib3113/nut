@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UPS } from '../src/UPS.js';
+import { ENUTStatus } from '../src/ENUTStatus.js';
+import { VarNotSupportedError } from '../src/Errors/index.js';
 import type { NUTClient as NUTClientType } from '../src/NUTClient.js';
 import crypto from 'node:crypto';
 
@@ -15,11 +17,14 @@ const { mockNutClient, mockNutClientConstructor } = vi.hoisted(() => {
         listClients: vi.fn<NUTClientType['listClients']>(),
         getVariableEnum: vi.fn<NUTClientType['getVariableEnum']>(),
         getCommandDescription: vi.fn<NUTClientType['getCommandDescription']>(),
+        runCommand: vi.fn<NUTClientType['runCommand']>(),
         getVariable: vi.fn<NUTClientType['getVariable']>(),
         setVariable: vi.fn<NUTClientType['setVariable']>(),
         getVariableRange: vi.fn<NUTClientType['getVariableRange']>(),
         getVariableDescription: vi.fn<NUTClientType['getVariableDescription']>(),
-        listCommands: vi.fn<NUTClientType['listCommands']>()
+        listCommands: vi.fn<NUTClientType['listCommands']>(),
+        master: vi.fn<NUTClientType['master']>(),
+        getMaster: vi.fn<NUTClientType['getMaster']>()
     };
     return {
         mockNutClient,
@@ -117,6 +122,14 @@ describe('UPS', () => {
         expect(mockNutClient.getCommandDescription).toHaveBeenCalledWith(testUPSName, 'test.reload');
     });
 
+    it('should run command', async () => {
+        const res = crypto.randomUUID();
+        mockNutClient.runCommand.mockResolvedValueOnce(res);
+        expect(await ups.runCommand('load.off')).toBe(res);
+        expect(mockNutClient.runCommand).toHaveBeenCalledTimes(1);
+        expect(mockNutClient.runCommand).toHaveBeenCalledWith(testUPSName, 'load.off');
+    });
+
     it('should list clients', async () => {
         const res = [crypto.randomUUID()];
         mockNutClient.listClients.mockResolvedValueOnce(res);
@@ -154,5 +167,282 @@ describe('UPS', () => {
         await ups.login();
         expect(mockNutClient.login).toHaveBeenCalledTimes(1);
         expect(mockNutClient.login).toHaveBeenCalledWith(testUPSName);
+    });
+
+    it('should master', async () => {
+        const res = crypto.randomUUID();
+        mockNutClient.master.mockResolvedValueOnce(res);
+        expect(await ups.master()).toBe(res);
+        expect(mockNutClient.master).toHaveBeenCalledTimes(1);
+        expect(mockNutClient.master).toHaveBeenCalledWith(testUPSName);
+    });
+
+    it('should get master', async () => {
+        mockNutClient.getMaster.mockResolvedValueOnce(true);
+        expect(await ups.getMaster()).toBe(true);
+        expect(mockNutClient.getMaster).toHaveBeenCalledTimes(1);
+        expect(mockNutClient.getMaster).toHaveBeenCalledWith(testUPSName);
+    });
+
+    describe('convenience methods', () => {
+        describe('getStatus', () => {
+            it('should parse single status', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OL');
+                const result = await ups.getStatus();
+                expect(result).toEqual([ENUTStatus.OL]);
+                expect(mockNutClient.getVariable).toHaveBeenCalledWith(testUPSName, 'ups.status');
+            });
+
+            it('should parse multiple space-separated statuses', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OL CHRG');
+                const result = await ups.getStatus();
+                expect(result).toEqual([ENUTStatus.OL, ENUTStatus.CHRG]);
+            });
+
+            it('should parse three statuses', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OB LB DISCHRG');
+                const result = await ups.getStatus();
+                expect(result).toEqual([ENUTStatus.OB, ENUTStatus.LB, ENUTStatus.DISCHRG]);
+            });
+
+            it('should filter out unknown status values', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OL UNKNOWN_STATUS CHRG');
+                const result = await ups.getStatus();
+                expect(result).toEqual([ENUTStatus.OL, ENUTStatus.CHRG]);
+            });
+
+            it('should handle extra whitespace', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('  OL   CHRG  ');
+                const result = await ups.getStatus();
+                expect(result).toEqual([ENUTStatus.OL, ENUTStatus.CHRG]);
+            });
+
+            it('should return empty array when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                const result = await ups.getStatus();
+                expect(result).toEqual([]);
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getStatus()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('isOnBattery', () => {
+            it('should return true when OB is present', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OB DISCHRG');
+                expect(await ups.isOnBattery()).toBe(true);
+            });
+
+            it('should return false when OB is not present', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OL CHRG');
+                expect(await ups.isOnBattery()).toBe(false);
+            });
+
+            it('should return false when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.isOnBattery()).toBe(false);
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.isOnBattery()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('isOnline', () => {
+            it('should return true when OL is present', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OL CHRG');
+                expect(await ups.isOnline()).toBe(true);
+            });
+
+            it('should return false when OL is not present', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('OB');
+                expect(await ups.isOnline()).toBe(false);
+            });
+
+            it('should return false when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.isOnline()).toBe(false);
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.isOnline()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getBatteryCharge', () => {
+            it('should return parsed number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('75');
+                expect(await ups.getBatteryCharge()).toBe(75);
+            });
+
+            it('should return parsed float', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('99.5');
+                expect(await ups.getBatteryCharge()).toBe(99.5);
+            });
+
+            it('should return NaN when variable is not a number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('not-a-number');
+                expect(await ups.getBatteryCharge()).toBeNaN();
+            });
+
+            it('should return NaN when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getBatteryCharge()).toBeNaN();
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getBatteryCharge()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getBatteryRuntime', () => {
+            it('should return parsed number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('1800');
+                expect(await ups.getBatteryRuntime()).toBe(1800);
+            });
+
+            it('should return NaN when variable is not a number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('unknown');
+                expect(await ups.getBatteryRuntime()).toBeNaN();
+            });
+
+            it('should return NaN when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getBatteryRuntime()).toBeNaN();
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getBatteryRuntime()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getLoad', () => {
+            it('should return parsed number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('42');
+                expect(await ups.getLoad()).toBe(42);
+            });
+
+            it('should return NaN when variable is not a number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('N/A');
+                expect(await ups.getLoad()).toBeNaN();
+            });
+
+            it('should return NaN when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getLoad()).toBeNaN();
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getLoad()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getInputVoltage', () => {
+            it('should return parsed number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('230.5');
+                expect(await ups.getInputVoltage()).toBe(230.5);
+            });
+
+            it('should return NaN when variable is not a number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('invalid');
+                expect(await ups.getInputVoltage()).toBeNaN();
+            });
+
+            it('should return NaN when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getInputVoltage()).toBeNaN();
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getInputVoltage()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getOutputVoltage', () => {
+            it('should return parsed number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('229.8');
+                expect(await ups.getOutputVoltage()).toBe(229.8);
+            });
+
+            it('should return NaN when variable is not a number', async () => {
+                mockNutClient.getVariable.mockResolvedValueOnce('invalid');
+                expect(await ups.getOutputVoltage()).toBeNaN();
+            });
+
+            it('should return NaN when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getOutputVoltage()).toBeNaN();
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getOutputVoltage()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getModel', () => {
+            it('should return model string', async () => {
+                const model = 'Back-UPS Pro 1500';
+                mockNutClient.getVariable.mockResolvedValueOnce(model);
+                expect(await ups.getModel()).toBe(model);
+                expect(mockNutClient.getVariable).toHaveBeenCalledWith(testUPSName, 'ups.model');
+            });
+
+            it('should return empty string when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getModel()).toBe('');
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getModel()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getManufacturer', () => {
+            it('should return manufacturer string', async () => {
+                const mfr = 'APC';
+                mockNutClient.getVariable.mockResolvedValueOnce(mfr);
+                expect(await ups.getManufacturer()).toBe(mfr);
+                expect(mockNutClient.getVariable).toHaveBeenCalledWith(testUPSName, 'ups.mfr');
+            });
+
+            it('should return empty string when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getManufacturer()).toBe('');
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getManufacturer()).rejects.toThrow('Connection refused');
+            });
+        });
+
+        describe('getSerial', () => {
+            it('should return serial string', async () => {
+                const serial = 'ABC123456789';
+                mockNutClient.getVariable.mockResolvedValueOnce(serial);
+                expect(await ups.getSerial()).toBe(serial);
+                expect(mockNutClient.getVariable).toHaveBeenCalledWith(testUPSName, 'ups.serial');
+            });
+
+            it('should return empty string when variable is not supported', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new VarNotSupportedError());
+                expect(await ups.getSerial()).toBe('');
+            });
+
+            it('should throw on connection errors', async () => {
+                mockNutClient.getVariable.mockRejectedValueOnce(new Error('Connection refused'));
+                await expect(ups.getSerial()).rejects.toThrow('Connection refused');
+            });
+        });
     });
 });

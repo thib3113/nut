@@ -28,15 +28,13 @@ import { UnknownError } from './Errors/UnknownError.js';
 
 const debug = createDebugger('NUTClient.utils');
 
-const parseLineRegex = /"([^"]*)"|(\S+)/g;
-
 export const parseLine = (line: string): Array<string> => {
     debug('parseLine: %o', line);
-    parseLineRegex.lastIndex = 0;
+    const regex = /"([^"]*)"|(\S+)/g;
     const parts = [];
     let match;
 
-    while ((match = parseLineRegex.exec(line)) !== null) {
+    while ((match = regex.exec(line)) !== null) {
         parts.push(match[1] ?? match[2]);
     }
 
@@ -104,7 +102,7 @@ export const variableTypeConverter = (
     return { type: EVariableType.NUMBER };
 };
 
-export const errorMessageToError = (str: string): string => {
+export const errorMessageToError = (str: string): never => {
     switch (str?.toUpperCase()) {
         case 'ACCESS-DENIED':
             throw new AccessDeniedError();

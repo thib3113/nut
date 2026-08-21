@@ -1,6 +1,8 @@
-export class CmdNotSupportedError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class CmdNotSupportedError extends NUTProtocolError {
     public constructor() {
-        super('The specified UPS doesn’t support the instant command in the request.');
-        Error.captureStackTrace(this, this.constructor);
+        super("The specified UPS doesn't support the instant command in the request.");
+        this.name = 'CmdNotSupportedError';
     }
 }

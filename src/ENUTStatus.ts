@@ -19,6 +19,10 @@ export enum ENUTStatus {
      */
     LB = 'LB',
     /**
+     * HIGH BATTERY
+     */
+    HB = 'HB',
+    /**
      * FORCED SHUTDOWN
      */
     FSD = 'FSD',
@@ -33,5 +37,25 @@ export enum ENUTStatus {
     /**
      * BYPASS mode
      */
-    BYPASS = 'BYPASS'
+    BYPASS = 'BYPASS',
+    /**
+     * CHARGING
+     */
+    CHRG = 'CHRG',
+    /**
+     * DISCHARGING
+     */
+    DISCHRG = 'DISCHRG',
+    /**
+     * TRIMMING voltage (input voltage too high)
+     */
+    TRIM = 'TRIM',
+    /**
+     * BOOSTING voltage (input voltage too low)
+     */
+    BOOST = 'BOOST',
+    /**
+     * OVERLOADED
+     */
+    OVER = 'OVER'
 }

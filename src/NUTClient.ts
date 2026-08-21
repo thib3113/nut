@@ -1,12 +1,249 @@
 import { UPS } from './UPS.js';
 import { RawNUTClient, UPSName } from './RawNUTClient.js';
+import type { IRawNUTClientOptions } from './RawNUTClient.js';
 import { parseLine, variableTypeConverter } from './utils.js';
 import type { nutVariables, nutVariablesNames } from './NUTVariables.js';
+import { TypedEmitter } from 'tiny-typed-emitter';
+import { createDebugger } from './utils.internal.js';
 
-export class NUTClient {
-    private readonly client: RawNUTClient;
-    constructor(host: string, port: number = 3493) {
-        this.client = new RawNUTClient(host, port);
+export interface INUTClientOptions extends IRawNUTClientOptions {
+    /** Default timeout for commands (ms). If not set, commands have no timeout. */
+    timeout?: number;
+    /** Enable auto-reconnect on connection loss. Default: false */
+    autoReconnect?: boolean;
+    /** Initial delay before reconnect attempt (ms). Default: 1000 */
+    reconnectDelay?: number;
+    /** Maximum delay between reconnect attempts (ms). Default: 30000 */
+    maxReconnectDelay?: number;
+    /** Multiplier for exponential backoff. Default: 2 */
+    reconnectBackoff?: number;
+    /** Maximum number of reconnect attempts before giving up. Default: Infinity */
+    maxReconnectAttempts?: number;
+    /** Username for authentication. Stored and re-sent automatically after reconnect. */
+    username?: string;
+    /** Password for authentication. Stored and re-sent automatically after reconnect. */
+    password?: string;
+}
+
+export interface NUTClientEvents {
+    /** Emitted when the connection is lost (before any reconnect attempt). */
+    disconnected: () => void;
+    /** Emitted when a reconnect attempt is about to be scheduled. */
+    reconnecting: (attempt: number, delay: number) => void;
+    /** Emitted when the connection has been successfully re-established. */
+    reconnected: () => void;
+    /** Emitted when a reconnect attempt fails. */
+    reconnectFailed: (attempt: number) => void;
+    /** Emitted when maxReconnectAttempts is reached and no further attempts will be made. */
+    reconnectExhausted: () => void;
+    /** Emitted when the client is destroyed. */
+    destroyed: () => void;
+}
+
+const debug = createDebugger('NUTClient');
+
+export class NUTClient extends TypedEmitter<NUTClientEvents> {
+    #client: RawNUTClient;
+    #options?: INUTClientOptions;
+
+    // Reconnect state
+    #reconnectTimer?: ReturnType<typeof setTimeout>;
+    #reconnectAttempts = 0;
+    #currentReconnectDelay: number;
+    #reconnecting = false;
+    #destroyed = false;
+
+    // Resolved reconnect options
+    #autoReconnect: boolean;
+    #reconnectDelay: number;
+    #maxReconnectDelay: number;
+    #reconnectBackoff: number;
+    #maxReconnectAttempts: number;
+
+    // Authentication state (restored automatically after reconnect)
+    #username?: string;
+    #password?: string;
+    #loggedInUps: Set<string> = new Set();
+
+    // Connection parameters (stored for reconnect)
+    #host: string;
+    #port: number;
+
+    constructor(host: string, port: number = 3493, options?: INUTClientOptions) {
+        super();
+
+        this.#host = host;
+        this.#port = port;
+        this.#options = options ? { ...options } : undefined;
+
+        this.#autoReconnect = options?.autoReconnect ?? false;
+        this.#reconnectDelay = options?.reconnectDelay ?? 1000;
+        this.#maxReconnectDelay = options?.maxReconnectDelay ?? 30000;
+        this.#reconnectBackoff = options?.reconnectBackoff ?? 2;
+        this.#maxReconnectAttempts = options?.maxReconnectAttempts ?? Infinity;
+        this.#currentReconnectDelay = this.#reconnectDelay;
+        this.#username = options?.username;
+        this.#password = options?.password;
+
+        this.#client = new RawNUTClient(host, port, options);
+        this.#setupClientListeners(this.#client);
+    }
+
+    /**
+     * Static factory method that creates a NUTClient and optionally
+     * authenticates when credentials are provided in options.
+     * Credentials are cleared from stored options after successful authentication
+     * to reduce the risk of credential leaks.
+     * @param host hostname or IP address
+     * @param port port number (default 3493)
+     * @param options client options including optional credentials
+     */
+    static async create(host: string, port?: number, options?: INUTClientOptions): Promise<NUTClient> {
+        const client = new NUTClient(host, port, options);
+        if (options?.username && options?.password) {
+            await client.connect(options.username, options.password);
+
+            // Clear credentials from memory after successful authentication
+            if (client.#options) {
+                delete client.#options.username;
+                delete client.#options.password;
+            }
+        }
+        return client;
+    }
+
+    #setupClientListeners(client: RawNUTClient): void {
+        client.on('disconnected', () => this.#handleDisconnect());
+    }
+
+    #handleDisconnect(): void {
+        if (this.#destroyed || this.#reconnecting) {
+            return;
+        }
+
+        this.emit('disconnected');
+
+        if (this.#autoReconnect) {
+            this.#reconnecting = true;
+            this.#scheduleReconnect();
+        }
+    }
+
+    #scheduleReconnect(): void {
+        if (this.#destroyed) {
+            return;
+        }
+
+        if (this.#reconnectAttempts >= this.#maxReconnectAttempts) {
+            debug('reconnect attempts exhausted (max: %d)', this.#maxReconnectAttempts);
+            this.emit('reconnectExhausted');
+            return;
+        }
+
+        this.#reconnectAttempts++;
+        const attempt = this.#reconnectAttempts;
+        const delay = this.#currentReconnectDelay;
+
+        debug('scheduling reconnect attempt %d in %d ms', attempt, delay);
+        this.emit('reconnecting', attempt, delay);
+
+        this.#reconnectTimer = setTimeout(() => {
+            this.#reconnectTimer = undefined;
+            this.#doReconnect();
+        }, delay);
+
+        // Increase delay for the next attempt (exponential backoff, capped)
+        this.#currentReconnectDelay = Math.min(this.#currentReconnectDelay * this.#reconnectBackoff, this.#maxReconnectDelay);
+    }
+
+    async #doReconnect(): Promise<void> {
+        if (this.#destroyed) {
+            return;
+        }
+
+        const attempt = this.#reconnectAttempts;
+
+        try {
+            debug('executing reconnect attempt %d', attempt);
+
+            // Destroy old client (cleanup, listeners already removed by destroy)
+            this.#client.destroy();
+
+            // Create new RawNUTClient
+            const newClient = new RawNUTClient(this.#host, this.#port, {
+                timeout: this.#options?.timeout,
+                connectTimeout: this.#options?.connectTimeout
+            });
+            this.#client = newClient;
+            this.#setupClientListeners(newClient);
+
+            // Wait for connection (event-based with timeout)
+            await new Promise<void>((resolve, reject) => {
+                const RECONNECT_TIMEOUT = 10000;
+
+                const cleanup = () => {
+                    clearTimeout(timeout);
+                    newClient.off('connected', onConnect);
+                    newClient.off('disconnected', onDisconnect);
+                };
+
+                const timeout = setTimeout(() => {
+                    cleanup();
+                    reject(new Error('Reconnect connection timeout'));
+                }, RECONNECT_TIMEOUT);
+
+                const onConnect = () => {
+                    cleanup();
+                    resolve();
+                };
+
+                const onDisconnect = () => {
+                    cleanup();
+                    reject(new Error('Connection failed during reconnect'));
+                };
+
+                // Check if already connected (race: connection established before listeners)
+                if (newClient.connected) {
+                    cleanup();
+                    resolve();
+                    return;
+                }
+
+                newClient.once('connected', onConnect);
+                newClient.once('disconnected', onDisconnect);
+            });
+
+            // Restore session (auth + login)
+            await this.#restoreSession();
+
+            // Success!
+            this.#reconnecting = false;
+            this.#reconnectAttempts = 0;
+            this.#currentReconnectDelay = this.#reconnectDelay;
+            debug('reconnected after %d attempts', attempt);
+            this.emit('reconnected');
+        } catch (err) {
+            debug('reconnect attempt %d failed: %O', attempt, err);
+            this.emit('reconnectFailed', attempt);
+
+            if (!this.#destroyed) {
+                this.#scheduleReconnect();
+            }
+        }
+    }
+
+    async #restoreSession(): Promise<void> {
+        if (this.#username && this.#password) {
+            await this.#client.connect(this.#username, this.#password);
+        }
+
+        for (const ups of this.#loggedInUps) {
+            try {
+                await this.#client.login(ups);
+            } catch (err) {
+                debug('failed to re-login UPS %s during session restore: %O', ups, err);
+            }
+        }
     }
 
     /**
@@ -15,7 +252,7 @@ export class NUTClient {
      * @param timeout {number} timeout for this command
      */
     async send(cmd: Array<string>, timeout?: number): ReturnType<RawNUTClient['send']> {
-        return this.client.send(cmd, timeout);
+        return this.#client.send(cmd, timeout);
     }
 
     /**
@@ -24,14 +261,17 @@ export class NUTClient {
      * @param password {string}
      */
     async connect(username: string, password: string): ReturnType<RawNUTClient['connect']> {
-        return this.client.connect(username, password);
+        this.#username = username;
+        this.#password = password;
+        return this.#client.connect(username, password);
     }
 
     /**
-     * will log out and disconnect
+     * will log out from the server
      */
     async logout(): ReturnType<RawNUTClient['logout']> {
-        return this.client.logout();
+        this.#loggedInUps.clear();
+        return this.#client.logout();
     }
 
     /**
@@ -40,33 +280,33 @@ export class NUTClient {
      * @see {RawNUTClient.startTLS} to check the arguments allowed
      */
     async startTLS(...args: Parameters<RawNUTClient['startTLS']>): ReturnType<RawNUTClient['startTLS']> {
-        return this.client.startTLS(...args);
+        return this.#client.startTLS(...args);
     }
 
     /**
      * get server version
      */
     async version(): ReturnType<RawNUTClient['version']> {
-        return this.client.version();
+        return this.#client.version();
     }
 
     /**
      * get network protocol version
      */
     async netVersion(): ReturnType<RawNUTClient['netVersion']> {
-        return this.client.netVersion();
+        return this.#client.netVersion();
     }
     /**
      * get help
      */
     async help(): ReturnType<RawNUTClient['help']> {
-        return this.client.help();
+        return this.#client.help();
     }
     /**
      * list all UPS
      */
     async listUPS(): Promise<Array<UPS>> {
-        return this.client.listUPS().then((res) =>
+        return this.#client.listUPS().then((res) =>
             res.map((l) => {
                 const parts = parseLine(l);
 
@@ -89,7 +329,7 @@ export class NUTClient {
      * @param ups {string}
      */
     async listVariables(ups: UPSName): Promise<nutVariables> {
-        return this.client.listVariables(ups).then((res) => {
+        return this.#client.listVariables(ups).then((res) => {
             const variables: nutVariables = {} as nutVariables;
             for (const line of res) {
                 const [key, value] = parseLine(line) as [nutVariablesNames, string];
@@ -109,7 +349,7 @@ export class NUTClient {
      * @param ups
      */
     async listCommands(ups: UPSName): ReturnType<RawNUTClient['listCommands']> {
-        return this.client.listCommands(ups);
+        return this.#client.listCommands(ups);
     }
 
     /**
@@ -118,7 +358,7 @@ export class NUTClient {
      * @param variable
      */
     async getVariableDescription(ups: UPSName, variable: nutVariablesNames): ReturnType<RawNUTClient['getVariableDescription']> {
-        return this.client.getVariableDescription(ups, variable);
+        return this.#client.getVariableDescription(ups, variable);
     }
 
     /**
@@ -127,7 +367,7 @@ export class NUTClient {
      * @param variable
      */
     async getVariableType(ups: UPSName, variable: nutVariablesNames): Promise<ReturnType<typeof variableTypeConverter>> {
-        return variableTypeConverter(await this.client.getVariableType(ups, variable));
+        return variableTypeConverter(await this.#client.getVariableType(ups, variable));
     }
 
     /**
@@ -136,7 +376,16 @@ export class NUTClient {
      * @param command
      */
     async getCommandDescription(ups: UPSName, command: string): ReturnType<RawNUTClient['getCommandDescription']> {
-        return this.client.getCommandDescription(ups, command);
+        return this.#client.getCommandDescription(ups, command);
+    }
+
+    /**
+     * run a command on the UPS
+     * @param ups
+     * @param command
+     */
+    async runCommand(ups: UPSName, command: string): ReturnType<RawNUTClient['runCommand']> {
+        return this.#client.runCommand(ups, command);
     }
 
     /**
@@ -145,7 +394,7 @@ export class NUTClient {
      * @param variable
      */
     async getVariableEnum(ups: UPSName, variable: nutVariablesNames): ReturnType<RawNUTClient['getVariableEnum']> {
-        return this.client.getVariableEnum(ups, variable);
+        return this.#client.getVariableEnum(ups, variable);
     }
 
     /**
@@ -154,7 +403,7 @@ export class NUTClient {
      * @param variable
      */
     async getVariableRange(ups: UPSName, variable: nutVariablesNames): ReturnType<RawNUTClient['getVariableRange']> {
-        return this.client.getVariableRange(ups, variable);
+        return this.#client.getVariableRange(ups, variable);
     }
 
     /**
@@ -164,7 +413,7 @@ export class NUTClient {
      * @param value
      */
     async setVariable(ups: UPSName, variable: nutVariablesNames, value: unknown): ReturnType<RawNUTClient['setVariable']> {
-        return this.client.setVariable(ups, variable, value);
+        return this.#client.setVariable(ups, variable, value);
     }
 
     /**
@@ -173,7 +422,7 @@ export class NUTClient {
      * @param variable
      */
     async getVariable(ups: UPSName, variable: nutVariablesNames): ReturnType<RawNUTClient['getVariable']> {
-        return this.client.getVariable(ups, variable);
+        return this.#client.getVariable(ups, variable);
     }
 
     /**
@@ -181,15 +430,20 @@ export class NUTClient {
      * @param ups
      */
     async listClients(ups: UPSName): ReturnType<RawNUTClient['listClients']> {
-        return this.client.listClients(ups);
+        return this.#client.listClients(ups);
     }
 
     /**
      * Allow to list variables
      * @param ups
      */
+    /**
+     * List writeable variables for a UPS.
+     * @returns Object mapping variable names to their current values
+     * @remarks Unlike RawNUTClient which returns raw strings, this method parses the response into a key-value object
+     */
     async listWriteableVariables(ups: UPSName): Promise<Record<string, string>> {
-        return this.client.listWriteableVariables(ups).then((res) => {
+        return this.#client.listWriteableVariables(ups).then((res) => {
             const variables: Record<string, string> = {};
             for (const line of res) {
                 const [key, value] = parseLine(line);
@@ -207,8 +461,15 @@ export class NUTClient {
     /**
      * @inheritDoc RawNUTClient.login
      */
-    login(ups: UPSName): ReturnType<RawNUTClient['login']> {
-        return this.client.login(ups);
+    async login(ups: UPSName): ReturnType<RawNUTClient['login']> {
+        this.#loggedInUps.add(ups);
+        try {
+            const result = await this.#client.login(ups);
+            return result;
+        } catch (err) {
+            this.#loggedInUps.delete(ups);
+            throw err;
+        }
     }
 
     /**
@@ -216,6 +477,49 @@ export class NUTClient {
      * @param ups
      */
     async getNumLogins(ups: UPSName): ReturnType<RawNUTClient['getNumLogins']> {
-        return this.client.getNumLogins(ups);
+        return this.#client.getNumLogins(ups);
+    }
+
+    /**
+     * @inheritDoc RawNUTClient.master
+     */
+    async master(ups: UPSName): ReturnType<RawNUTClient['master']> {
+        return this.#client.master(ups);
+    }
+
+    /**
+     * Check if this client is master for the UPS
+     * @param ups
+     */
+    async getMaster(ups: UPSName): ReturnType<RawNUTClient['getMaster']> {
+        return this.#client.getMaster(ups);
+    }
+
+    /**
+     * Destroy the client and release all resources.
+     * After calling destroy(), the client cannot be reused.
+     */
+    destroy(): void {
+        if (this.#destroyed) {
+            return;
+        }
+
+        this.#destroyed = true;
+
+        // Clear any pending reconnect timer
+        if (this.#reconnectTimer) {
+            clearTimeout(this.#reconnectTimer);
+            this.#reconnectTimer = undefined;
+        }
+
+        // Destroy the underlying RawNUTClient
+        this.#client.removeAllListeners();
+        this.#client.destroy();
+
+        // Emit destroyed before removing listeners so subscribers can react
+        this.emit('destroyed');
+
+        // Remove all event listeners from the EventEmitter
+        this.removeAllListeners();
     }
 }

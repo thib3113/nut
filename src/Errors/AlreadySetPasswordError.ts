@@ -1,6 +1,8 @@
-export class AlreadySetPasswordError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class AlreadySetPasswordError extends NUTProtocolError {
     public constructor() {
-        super('The client already set a PASSWORD and can’t set another. This also should never happen with normal NUT clients.');
-        Error.captureStackTrace(this, this.constructor);
+        super("The client already set a PASSWORD and can't set another. This also should never happen with normal NUT clients.");
+        this.name = 'AlreadySetPasswordError';
     }
 }

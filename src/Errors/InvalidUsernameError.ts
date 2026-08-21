@@ -1,6 +1,8 @@
-export class InvalidUsernameError extends Error {
+import { NUTProtocolError } from './NUTProtocolError.js';
+
+export class InvalidUsernameError extends NUTProtocolError {
     public constructor() {
         super('The client sent an invalid USERNAME.');
-        Error.captureStackTrace(this, this.constructor);
+        this.name = 'InvalidUsernameError';
     }
 }

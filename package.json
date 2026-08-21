@@ -52,6 +52,7 @@
   "license": "MIT",
   "devDependencies": {
     "@tsconfig/node-lts": "24.0.1",
+    "@types/async": "^3.2.25",
     "@types/debug": "4.1.13",
     "@types/node": "26.2.0",
     "@typescript-eslint/parser": "8.67.0",

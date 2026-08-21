@@ -21,6 +21,9 @@ importers:
       '@tsconfig/node-lts':
         specifier: 24.0.1
         version: 24.0.1
+      '@types/async':
+        specifier: ^3.2.25
+        version: 3.2.25
       '@types/debug':
         specifier: 4.1.13
         version: 4.1.13
@@ -423,6 +426,9 @@ packages:
 
   '@tsconfig/node-lts@24.0.1':
     resolution: {integrity: sha512-xo+1KtV5zVb90fyyeglG1n5cqg3cQXLlCkEpLptYlZUNk28xmwhuD5GmxoXwmrVtUTvaMyclun9kAd0TK7H+Pg==}
+
+  '@types/async@3.2.25':
+    resolution: {integrity: sha512-O6Th/DI18XjrL9TX8LO9F/g26qAz5vynmQqlXt/qLGrskvzCKXKc5/tATz3G2N6lM8eOf3M8/StB14FncAmocg==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -1412,6 +1418,8 @@ snapshots:
   '@standard-schema/spec@1.1.0': {}
 
   '@tsconfig/node-lts@24.0.1': {}
+
+  '@types/async@3.2.25': {}
 
   '@types/chai@5.2.3':
     dependencies:
