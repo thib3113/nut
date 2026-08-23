@@ -22,7 +22,7 @@ importers:
         specifier: 24.0.1
         version: 24.0.1
       '@types/async':
-        specifier: ^3.2.25
+        specifier: 3.2.25
         version: 3.2.25
       '@types/debug':
         specifier: 4.1.13
@@ -34,7 +34,7 @@ importers:
         specifier: 8.67.0
         version: 8.67.0(eslint@10.8.1(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       '@vitest/coverage-v8':
-        specifier: ^4.1.11
+        specifier: 4.1.11
         version: 4.1.11(vitest@4.1.11)
       esbuild:
         specifier: 0.28.2
@@ -61,7 +61,7 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       vitest:
-        specifier: ^4.1.11
+        specifier: 4.1.11
         version: 4.1.11(@types/node@26.2.0)(@vitest/coverage-v8@4.1.11)(vite@8.2.1(@types/node@26.2.0)(esbuild@0.28.2)(yaml@2.9.0))
 
 packages:
