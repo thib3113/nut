@@ -158,10 +158,10 @@ const debug = createDebugger('Monitor');
  * ```
  */
 export class Monitor extends TypedEmitter<IMonitorEvents> {
-    #options: Required<IMonitorOptions>;
-    #heartBeat: Heartbeat;
-    #client: NUTClient;
-    #upsName: UPSName;
+    readonly #options: Required<IMonitorOptions>;
+    readonly #heartBeat: Heartbeat;
+    readonly #client: NUTClient;
+    readonly #upsName: UPSName;
     #destroyed = false;
 
     #communication?: boolean;
@@ -169,8 +169,8 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
     #ups?: UPS;
     #paused = false;
 
-    #onReconnected: () => void;
-    #onReconnectExhausted: () => void;
+    readonly #onReconnected: () => void;
+    readonly #onReconnectExhausted: () => void;
 
     constructor(client: NUTClient, upsName: UPSName, options: IMonitorOptions = {}) {
         super();
@@ -321,6 +321,11 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
             return;
         }
 
+        this.#emitStatusEvents(previousState, state);
+        this.#emitVariableChanges(previousState, state);
+    };
+
+    #emitStatusEvents(previousState: nutVariables, state: nutVariables): void {
         // ups.status contains space-separated status codes (e.g. "OL CHRG")
         const rawStatus = (state['ups.status'] ?? '') as string;
         const currentStatuses = rawStatus.split(/\s+/).filter(Boolean);
@@ -387,7 +392,9 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
                 this.emit('UNKNOWN_STATUS', status);
             }
         }
+    }
 
+    #emitVariableChanges(previousState: nutVariables, state: nutVariables): void {
         this.checkChangedValue(previousState, state, 'battery.charge', (value) => this.emit('BATTERY_CHARGE', Number(value), value));
         this.checkChangedValue(previousState, state, 'battery.runtime', (value) => this.emit('BATTERY_RUNTIME', Number(value), value));
 
@@ -413,7 +420,7 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
         if (variableChanged) {
             this.emit('VARIABLES_CHANGED', previousState, state);
         }
-    };
+    }
 
     public emit<U extends keyof IMonitorEvents>(event: U, ...args: Parameters<IMonitorEvents[U]>): boolean {
         debug('emit event %s', event);

@@ -6,8 +6,8 @@ const debug = createDebugger('Heartbeat');
 export class Heartbeat {
     #timer?: AsyncIterable<null>;
     #controller?: AbortController;
-    #interval: number;
-    #callback: () => Promise<void> | void;
+    readonly #interval: number;
+    readonly #callback: () => Promise<void> | void;
 
     constructor(interval: number, callback: () => Promise<void> | void) {
         this.#interval = interval;

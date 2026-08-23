@@ -42,26 +42,23 @@ const globalConfig = {
     plugins: [makeAllPackagesExternalPlugin]
 };
 
-esbuild
-    .build({
-        ...globalConfig,
-        outdir: path.join(dist, 'esm'),
-        splitting: true,
-        format: 'esm',
-        outExtension: { '.js': '.mjs' },
-        target: ['node18']
-    })
-    .catch(() => process.exit(1));
-esbuild
-    .build({
-        ...globalConfig,
-        outdir: path.join(dist, 'cjs'),
-        format: 'cjs',
-        outExtension: { '.js': '.cjs' },
-        platform: 'node',
-        target: ['node18']
-    })
-    .catch(() => process.exit(1));
+await esbuild.build({
+    ...globalConfig,
+    outdir: path.join(dist, 'esm'),
+    splitting: true,
+    format: 'esm',
+    outExtension: { '.js': '.mjs' },
+    target: ['node18']
+});
+
+await esbuild.build({
+    ...globalConfig,
+    outdir: path.join(dist, 'cjs'),
+    format: 'cjs',
+    outExtension: { '.js': '.cjs' },
+    platform: 'node',
+    target: ['node18']
+});
 
 // an entry file for esm at the root of the bundle
 fs.writeFileSync(path.join(dist, 'index.mjs'), "export * from './esm/index.mjs';");

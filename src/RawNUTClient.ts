@@ -42,17 +42,17 @@ const debug = createDebugger('RawNUTClient');
  * Reserved for advanced uses, use {@link NUTClient}
  */
 export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
-    #tcpClient!: Socket;
+    readonly #tcpClient: Socket;
     #tlsClient?: TLSSocket;
     #receivingList: boolean = false;
     #connected = false;
     #receivedMessage = '';
     #callBacks: Array<messageCallback> = [];
-    #cmdQueue: QueueObject<ITask>;
-    #defaultTimeout?: number;
-    #connectTimeout: number;
-    #host: string;
-    #port: number;
+    readonly #cmdQueue: QueueObject<ITask>;
+    readonly #defaultTimeout?: number;
+    readonly #connectTimeout: number;
+    readonly #host: string;
+    readonly #port: number;
 
     /**
      * Get the underlying TCP or TLS socket.

@@ -55,7 +55,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install --ignore-scripts
+        run: pnpm install
 
   build:
     needs: [ prepare, ci ]
@@ -94,7 +94,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: pnpm install --ignore-scripts
+        run: pnpm install
         shell: bash
 
       - name: Compare npm with local (versions)
@@ -109,10 +109,10 @@ jobs:
         run: pnpm build
 
       - name: Update npm
-        run: npm install -g npm@latest
+        run: npm install -g npm@latest --ignore-scripts
 
       - name: publish to NPM
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public --ignore-scripts
         if: steps.package_version.outputs.npm_is_greater != 'true'
 
 #      - name: publish to GPR

@@ -44,7 +44,7 @@ const debug = createDebugger('NUTClient');
 
 export class NUTClient extends TypedEmitter<NUTClientEvents> {
     #client: RawNUTClient;
-    #options?: INUTClientOptions;
+    readonly #options?: INUTClientOptions;
 
     // Reconnect state
     #reconnectTimer?: ReturnType<typeof setTimeout>;
@@ -54,11 +54,11 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     #destroyed = false;
 
     // Resolved reconnect options
-    #autoReconnect: boolean;
-    #reconnectDelay: number;
-    #maxReconnectDelay: number;
-    #reconnectBackoff: number;
-    #maxReconnectAttempts: number;
+    readonly #autoReconnect: boolean;
+    readonly #reconnectDelay: number;
+    readonly #maxReconnectDelay: number;
+    readonly #reconnectBackoff: number;
+    readonly #maxReconnectAttempts: number;
 
     // Authentication state (restored automatically after reconnect)
     #username?: string;
@@ -70,8 +70,8 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     #tlsOptions?: Omit<ConnectionOptions, 'socket' | 'host' | 'port'>;
 
     // Connection parameters (stored for reconnect)
-    #host: string;
-    #port: number;
+    readonly #host: string;
+    readonly #port: number;
 
     constructor(host: string, port: number = 3493, options?: INUTClientOptions) {
         super();

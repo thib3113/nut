@@ -5,7 +5,7 @@ import { nutVariablesNames } from './NUTVariables.js';
 import type { TrackingOptions } from './TrackingTypes.js';
 
 export class UPS {
-    #client: NUTClient;
+    readonly #client: NUTClient;
 
     constructor(
         client: NUTClient,
