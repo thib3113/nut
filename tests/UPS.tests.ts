@@ -123,11 +123,19 @@ describe('UPS', () => {
     });
 
     it('should run command', async () => {
-        const res = crypto.randomUUID();
+        const res = { tracked: false, success: true } as const;
         mockNutClient.runCommand.mockResolvedValueOnce(res);
         expect(await ups.runCommand('load.off')).toBe(res);
         expect(mockNutClient.runCommand).toHaveBeenCalledTimes(1);
-        expect(mockNutClient.runCommand).toHaveBeenCalledWith(testUPSName, 'load.off');
+        expect(mockNutClient.runCommand).toHaveBeenCalledWith(testUPSName, 'load.off', undefined, undefined);
+    });
+
+    it('should run command with param', async () => {
+        const res = { tracked: false, success: true } as const;
+        mockNutClient.runCommand.mockResolvedValueOnce(res);
+        expect(await ups.runCommand('load.off', '120')).toBe(res);
+        expect(mockNutClient.runCommand).toHaveBeenCalledTimes(1);
+        expect(mockNutClient.runCommand).toHaveBeenCalledWith(testUPSName, 'load.off', '120', undefined);
     });
 
     it('should list clients', async () => {
@@ -139,11 +147,11 @@ describe('UPS', () => {
     });
 
     it('should set variable', async () => {
-        const res = crypto.randomUUID();
+        const res = { tracked: false, success: true } as const;
         mockNutClient.setVariable.mockResolvedValueOnce(res);
         expect(await ups.setVariable('device.description', 'test')).toBe(res);
         expect(mockNutClient.setVariable).toHaveBeenCalledTimes(1);
-        expect(mockNutClient.setVariable).toHaveBeenCalledWith(testUPSName, 'device.description', 'test');
+        expect(mockNutClient.setVariable).toHaveBeenCalledWith(testUPSName, 'device.description', 'test', undefined);
     });
 
     it('should list writeable variable', async () => {

@@ -59,7 +59,6 @@ describe('Heartbeat', () => {
     });
 
     it('should catch errors thrown by the callback', async () => {
-        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
         let callCount = 0;
         const callback = vi.fn().mockImplementation(async () => {
             callCount++;
@@ -73,7 +72,6 @@ describe('Heartbeat', () => {
 
         await wait(50);
         expect(callback).toHaveBeenCalledTimes(1);
-        expect(consoleErrorSpy).toHaveBeenCalledWith('Heartbeat callback crashed', expect.any(Error));
 
         // Heartbeat should still be alive — next tick should call callback again
         await wait(100);
@@ -81,7 +79,6 @@ describe('Heartbeat', () => {
         expect(callback.mock.calls.length).toBeGreaterThanOrEqual(2);
 
         hb.stop();
-        consoleErrorSpy.mockRestore();
     });
 
     it('should be safe to call stop() multiple times', async () => {

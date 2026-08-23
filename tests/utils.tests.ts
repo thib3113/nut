@@ -25,7 +25,7 @@ import {
     VarNotSupportedError,
     UnknownError
 } from '../src/Errors/index.js';
-import { errorMessageToError, escapeCommandPart, parseList, variableTypeConverter } from '../src/utils.js';
+import { checkError, errorMessageToError, escapeCommandPart, parseList, variableTypeConverter } from '../src/utils.js';
 
 describe('utils', () => {
     describe('parseList', () => {
@@ -43,11 +43,11 @@ describe('utils', () => {
         });
 
         it('should throw if received an invalid list end', () => {
-            expect(() => parseList(`BEGIN LIST UPS\nUPS dummyups "Dummy UPS for testing"`)).toThrow('fail to parse list (bad END)');
+            expect(() => parseList(`BEGIN LIST UPS\nUPS dummyups "Dummy UPS for testing"`)).toThrow('failed to parse list (bad END)');
         });
 
         it('should throw if received an invalid list begin', () => {
-            expect(() => parseList('UPS dummyups "Dummy UPS for testing"\nEND LIST UPS`')).toThrow('fail to parse list (bad BEGIN)');
+            expect(() => parseList('UPS dummyups "Dummy UPS for testing"\nEND LIST UPS`')).toThrow('failed to parse list (bad BEGIN)');
         });
     });
 
@@ -181,6 +181,32 @@ describe('utils', () => {
             const escaped = escapeCommandPart(malicious);
             expect(escaped).toBe('mypassSET VAR ups.status OL');
             expect(escaped).not.toContain('\n');
+        });
+
+        it('should remove null bytes', () => {
+            expect(escapeCommandPart('hello\0world')).toBe('helloworld');
+        });
+
+        it('should remove multiple null bytes', () => {
+            expect(escapeCommandPart('\0hello\0\0world\0')).toBe('helloworld');
+        });
+
+        it('should handle null bytes combined with other dangerous characters', () => {
+            expect(escapeCommandPart('a\0b"c\nd\0')).toBe('ab\\"cd');
+        });
+    });
+
+    describe('checkError', () => {
+        it('should return the message unchanged when it is not an error', () => {
+            expect(checkError('BEGIN LIST UPS')).toBe('BEGIN LIST UPS');
+        });
+
+        it('should throw on empty string input', () => {
+            expect(() => checkError('')).toThrow('Empty response from server');
+        });
+
+        it('should throw on ERR-prefixed messages', () => {
+            expect(() => checkError('ERR ACCESS-DENIED')).toThrow(AccessDeniedError);
         });
     });
 });

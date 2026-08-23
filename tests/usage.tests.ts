@@ -179,12 +179,14 @@ describe('usage tests', () => {
         });
 
         it('should write variable', async () => {
-            expect(await client.setVariable(testUPSName, 'ups.status', 'OB')).toStrictEqual('OK');
+            const result = await client.setVariable(testUPSName, 'ups.status', 'OB');
+            expect(result).toBe('OK');
 
             //passing variable to driver can take time
             await setTimeout(2 * 1000);
 
-            expect(await client.getVariable(testUPSName, 'ups.status')).toStrictEqual('OB');
+            const status = await client.getVariable(testUPSName, 'ups.status');
+            expect(status).toContain('OB');
         });
     });
 
@@ -197,5 +199,218 @@ describe('usage tests', () => {
         expect(client.client).toBeInstanceOf(TLSSocket);
 
         expect(await client.version()).toBe(previousVersion);
+    });
+
+    describe('new commands', () => {
+        it('should get UPS description', async () => {
+            const desc = await client.getUPSDescription(testUPSName);
+            expect(desc).toBe('Dummy UPS for testing');
+        });
+
+        it('should run command with parameter', async () => {
+            // load.off.delay accepts a delay parameter in seconds
+            const result = await client.runCommand(testUPSName, 'load.off', '5');
+            expect(result).toBe('OK');
+        });
+
+        it('should set and get tracking', async () => {
+            // Enable tracking
+            const setResult = await client.setTracking(true);
+            // Server may return 'OK TRACKING' or just 'OK' depending on NUT version
+            expect(['OK TRACKING', 'OK']).toContain(setResult);
+
+            // Run a command with tracking enabled
+            const cmdResult = await client.setVariable(testUPSName, 'ups.status', 'OL');
+
+            // If tracking is supported, result contains UUID
+            if (cmdResult.startsWith('OK TRACKING')) {
+                const uuid = cmdResult.split(' ')[2];
+                expect(uuid).toBeDefined();
+
+                // Poll tracking status
+                const trackingStatus = await client.getTracking(uuid);
+                expect(['PENDING', 'SUCCESS']).toContain(trackingStatus);
+            }
+
+            // Disable tracking
+            await client.setTracking(false);
+        });
+
+        it('should force shutdown (FSD)', async () => {
+            // FSD requires master login
+            await client.login(testUPSName);
+            await client.master(testUPSName);
+
+            const result = await client.forceShutdown(testUPSName);
+            expect(result).toBe('OK FSD-SET');
+
+            // Note: FSD sets a flag on the UPS, actual shutdown behavior depends on upsmon
+            // Clean up: reset status to remove FSD flag
+            await setTimeout(500);
+            await client.setVariable(testUPSName, 'ups.status', 'OL');
+        });
+    });
+});
+
+describe('NUTClient integration tests', () => {
+    let client: NUTClient;
+
+    beforeEach(async () => {
+        client = new NUTClient('127.0.0.1', 3493);
+        await client.connect('user', 'secret');
+    });
+
+    afterEach(async () => {
+        if (client.connected) {
+            await client.logout();
+        }
+
+        const controller = new AbortController();
+
+        for await (const _ of setInterval(10, null, {
+            signal: controller.signal
+        })) {
+            if (!client.connected) {
+                controller.abort();
+                return;
+            }
+        }
+    });
+
+    it('should connect and show connected=true', () => {
+        expect(client.connected).toBe(true);
+    });
+
+    it('should list UPS as UPS objects', async () => {
+        const upsList = await client.listUPS();
+
+        expect(upsList.length).toBe(1);
+        expect(upsList[0].name).toBe(testUPSName);
+        expect(upsList[0].description).toBe('Dummy UPS for testing');
+    });
+
+    it('should get UPS by name', async () => {
+        const ups = await client.getUPS(testUPSName);
+
+        expect(ups).toBeDefined();
+        expect(ups!.name).toBe(testUPSName);
+        expect(ups!.description).toBe('Dummy UPS for testing');
+    });
+
+    it('should list variables as parsed object', async () => {
+        const variables = await client.listVariables(testUPSName);
+
+        expect(variables).toBeTypeOf('object');
+        expect(variables['device.mfr']).toBe('Dummy Manufacturer');
+        expect(variables['device.model']).toBe('Dummy UPS');
+        expect(variables['device.type']).toBe('ups');
+    });
+
+    it('should list writeable variables as parsed object', async () => {
+        const variables = await client.listWriteableVariables(testUPSName);
+
+        expect(variables).toBeTypeOf('object');
+        expect(variables['ups.status']).toBeDefined();
+        expect(typeof variables['ups.status']).toBe('string');
+    });
+
+    it('should get variable type as object', async () => {
+        const type = await client.getVariableType(testUPSName, 'device.mfr');
+
+        expect(type.type).toBe('STRING');
+        expect(type.maxLength).toBeGreaterThan(0);
+    });
+
+    it('should get/set variables', async () => {
+        // Ensure clean state (FSD flag may be set from previous tests)
+        await client.setVariable(testUPSName, 'ups.status', 'OL');
+        await setTimeout(500);
+
+        expect(await client.getVariable(testUPSName, 'device.model')).toBe('Dummy UPS');
+
+        const setResult = await client.setVariable(testUPSName, 'ups.status', 'OB');
+        expect(setResult).toStrictEqual({ tracked: false, success: true });
+
+        // passing variable to driver can take time
+        await setTimeout(2 * 1000);
+
+        const status = await client.getVariable(testUPSName, 'ups.status');
+        expect(status).toContain('OB');
+
+        // restore original value
+        await client.setVariable(testUPSName, 'ups.status', 'OL');
+    });
+
+    it('should support startTLS', async () => {
+        const previousVersion = await client.version();
+        await client.startTLS({
+            rejectUnauthorized: false
+        });
+
+        expect(await client.version()).toBe(previousVersion);
+    });
+
+    describe('new commands', () => {
+        it('should get UPS description', async () => {
+            const desc = await client.getUPSDescription(testUPSName);
+            expect(desc).toBe('Dummy UPS for testing');
+        });
+
+        it('should run command with parameter', async () => {
+            const result = await client.runCommand(testUPSName, 'load.off', '5');
+            expect(result).toEqual({ tracked: false, success: true });
+        });
+
+        it('should set and get tracking', async () => {
+            await client.setTracking(true);
+
+            const cmdResult = await client.setVariable(testUPSName, 'ups.status', 'OL');
+
+            // If tracking is supported, result contains UUID
+            if (cmdResult.tracked && 'trackingUid' in cmdResult) {
+                const uuid = cmdResult.trackingUid;
+                expect(uuid).toBeDefined();
+
+                const trackingStatus = await client.getTracking(uuid);
+                expect(['PENDING', 'SUCCESS']).toContain(trackingStatus);
+            }
+
+            await client.setTracking(false);
+        });
+
+        it('should force shutdown (FSD)', async () => {
+            await client.login(testUPSName);
+            await client.master(testUPSName);
+
+            const result = await client.forceShutdown(testUPSName);
+            expect(result).toBe('OK FSD-SET');
+
+            // Clean up: reset status to remove FSD flag
+            await setTimeout(500);
+            await client.setVariable(testUPSName, 'ups.status', 'OL');
+        });
+    });
+
+    it('NUTClient.create() should connect with credentials', async () => {
+        const created = await NUTClient.create('127.0.0.1', 3493, {
+            username: 'user',
+            password: 'secret'
+        });
+
+        expect(created.connected).toBe(true);
+
+        const upsList = await created.listUPS();
+        expect(upsList.length).toBe(1);
+        expect(upsList[0].name).toBe(testUPSName);
+
+        await created.logout();
+    });
+
+    it('should logout and show connected=false', async () => {
+        expect(client.connected).toBe(true);
+        await client.logout();
+
+        await setTimeout(10);
+        expect(client.connected).toBe(false);
     });
 });

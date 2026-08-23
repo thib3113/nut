@@ -49,7 +49,7 @@ esbuild
         splitting: true,
         format: 'esm',
         outExtension: { '.js': '.mjs' },
-        target: ['esnext']
+        target: ['node18']
     })
     .catch(() => process.exit(1));
 esbuild
@@ -59,7 +59,7 @@ esbuild
         format: 'cjs',
         outExtension: { '.js': '.cjs' },
         platform: 'node',
-        target: ['node16']
+        target: ['node18']
     })
     .catch(() => process.exit(1));
 

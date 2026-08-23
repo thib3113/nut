@@ -1,4 +1,7 @@
 import { setInterval } from 'node:timers/promises';
+import { createDebugger } from './utils.internal.js';
+
+const debug = createDebugger('Heartbeat');
 
 export class Heartbeat {
     #timer?: AsyncIterable<null>;
@@ -22,19 +25,19 @@ export class Heartbeat {
             signal: this.#controller.signal
         });
 
-        this.loop().catch((err: Error) => console.error('Heartbeat loop crashed', err));
+        this.loop().catch((err: Error) => debug('Heartbeat loop crashed: %O', err));
     }
 
     async loop() {
         if (!this.#timer) {
-            throw new Error('something is wrong');
+            throw new Error('Heartbeat timer not initialized');
         }
 
         for await (const _ of this.#timer) {
             try {
                 await this.#callback();
             } catch (e) {
-                console.error('Heartbeat callback crashed', e);
+                debug('Heartbeat callback crashed: %O', e);
             }
         }
     }

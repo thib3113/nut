@@ -11,15 +11,15 @@
     "lib"
   ],
   "scripts": {
-    "start": "npm run build && node --enable-source-maps lib/index.mjs",
+    "start": "pnpm run build && node --enable-source-maps lib/index.mjs",
     "ts-types": "tsc -p tsconfig.build.json --emitDeclarationOnly --outDir lib/types",
-    "build": "tsc --noEmit && rimraf lib && node esbuild.mjs && npm run ts-types",
+    "build": "tsc --noEmit && rimraf lib && node esbuild.mjs && pnpm run ts-types",
     "test": "vitest run",
     "test:ci": "vitest run",
     "test:ci:coverage": "vitest run --coverage",
     "lint": "eslint",
-    "lint:fix": "npm run lint -- --fix",
-    "ci:eslint": "npm run lint -- -f json -o ./coverage/eslint-report.json",
+    "lint:fix": "eslint --fix",
+    "ci:eslint": "pnpm run lint -- -f json -o ./coverage/eslint-report.json",
     "generate:documentation": "typedoc"
   },
   "repository": {

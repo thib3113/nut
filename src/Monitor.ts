@@ -6,6 +6,7 @@ import { ENUTStatus } from './ENUTStatus.js';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { createDebugger } from './utils.internal.js';
 import { nutVariables, nutVariablesNames } from './NUTVariables.js';
+import { ConnectionLostError } from './Errors/ConnectionLostError.js';
 
 export interface IMonitorOptions {
     /**
@@ -41,10 +42,6 @@ export interface IMonitorEvents {
      */
     COMMBAD: () => void;
     /**
-     * The local system is being shut down.
-     */
-    SHUTDOWN: () => void;
-    /**
      * The UPS needs to have its battery replaced.
      */
     REPLBATT: () => void;
@@ -76,6 +73,26 @@ export interface IMonitorEvents {
      * UPS no longer on bypass.
      */
     NOTBYPASS: () => void;
+    /**
+     * The UPS is no longer online (OL disappeared).
+     */
+    NOTOL: () => void;
+    /**
+     * The UPS is no longer on battery (OB disappeared).
+     */
+    NOTOB: () => void;
+    /**
+     * The UPS battery is no longer low (LB disappeared).
+     */
+    NOTLB: () => void;
+    /**
+     * The UPS is no longer in forced shutdown mode (FSD disappeared).
+     */
+    NOTFSD: () => void;
+    /**
+     * The UPS no longer needs battery replacement (RB disappeared).
+     */
+    NOTRB: () => void;
     /**
      * UPS STATUS IS UNKNOWN
      */
@@ -147,11 +164,13 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
     #upsName: UPSName;
     #destroyed = false;
 
-    // Kept as TypeScript `private` (not `#`) because tests directly access these fields
-    private communication?: boolean;
-    private previousState?: nutVariables;
-    private ups?: UPS;
-    private _paused = false;
+    #communication?: boolean;
+    #previousState?: nutVariables;
+    #ups?: UPS;
+    #paused = false;
+
+    #onReconnected: () => void;
+    #onReconnectExhausted: () => void;
 
     constructor(client: NUTClient, upsName: UPSName, options: IMonitorOptions = {}) {
         super();
@@ -164,7 +183,19 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
             ...options
         };
 
-        this.#heartBeat = new Heartbeat(this.#options.pollFrequency, this._loopFn);
+        this.#heartBeat = new Heartbeat(this.#options.pollFrequency, this.#loopFn);
+
+        this.#onReconnected = () => {
+            debug('client reconnected');
+        };
+
+        this.#onReconnectExhausted = () => {
+            this.emit('NOCOMM');
+            debug('client reconnect exhausted');
+        };
+
+        this.#client.on('reconnected', this.#onReconnected);
+        this.#client.on('reconnectExhausted', this.#onReconnectExhausted);
     }
 
     async start(): Promise<void> {
@@ -174,10 +205,10 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
 
         const ups = await this.#client.getUPS(this.#upsName);
         if (!ups) {
-            throw new Error(`fail to get UPS`);
+            throw new Error(`failed to get UPS`);
         }
 
-        this.ups = ups;
+        this.#ups = ups;
 
         this.#heartBeat.start();
     }
@@ -205,9 +236,12 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
         this.#heartBeat.stop();
         this.removeAllListeners();
 
+        this.#client.off('reconnected', this.#onReconnected);
+        this.#client.off('reconnectExhausted', this.#onReconnectExhausted);
+
         // Clean up references
-        this.ups = undefined;
-        this.previousState = undefined;
+        this.#ups = undefined;
+        this.#previousState = undefined;
     }
 
     /**
@@ -223,7 +257,7 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
      * When resumed, the next poll is treated as a fresh start (no spurious events).
      */
     pause(): void {
-        this._paused = true;
+        this.#paused = true;
         debug('monitoring paused');
     }
 
@@ -233,8 +267,8 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
      * (no VARIABLE_CHANGED / status events are emitted for stale data).
      */
     resume(): void {
-        this._paused = false;
-        this.previousState = undefined;
+        this.#paused = false;
+        this.#previousState = undefined;
         debug('monitoring resumed');
     }
 
@@ -242,39 +276,45 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
      * Check if monitoring is currently paused.
      */
     isPaused(): boolean {
-        return this._paused;
+        return this.#paused;
     }
 
-    private readonly _loopFn = async () => {
-        if (this._paused) {
+    readonly #loopFn = async () => {
+        if (this.#paused) {
             return;
         }
 
-        if (!this.ups) {
+        if (!this.#ups) {
             throw new Error('ups need to be setup before');
         }
 
-        const previousState = this.previousState;
-        const state = await this.ups.listVariables().catch((e) => {
-            debug.extend('loop')('fail to get state : %o', e);
-            return null;
+        const previousState = this.#previousState;
+        const state = await this.#ups.listVariables().catch((e) => {
+            if (e instanceof ConnectionLostError) {
+                debug.extend('loop')('connection lost: %o', e);
+                return null;
+            }
+            throw e; // Non-communication errors propagate
         });
 
         // state is null => error in communication
         if (state === null) {
-            if (this.communication) {
-                this.communication = false;
-                this.emit('NOCOMM');
+            if (this.#communication) {
+                this.#communication = false;
+                this.emit('COMMBAD');
             }
             return;
         }
 
-        if (this.communication === false) {
-            this.communication = true;
+        // Set #communication to true on first successful poll, emit COMMOK only on recovery from false
+        if (this.#communication === undefined) {
+            this.#communication = true;
+        } else if (this.#communication === false) {
+            this.#communication = true;
             this.emit('COMMOK');
         }
 
-        this.previousState = state;
+        this.#previousState = state;
 
         // no emit on first loop
         if (!previousState) {
@@ -283,45 +323,60 @@ export class Monitor extends TypedEmitter<IMonitorEvents> {
 
         // ups.status contains space-separated status codes (e.g. "OL CHRG")
         const rawStatus = (state['ups.status'] ?? '') as string;
-        const currentStatuses = new Set(rawStatus.split(/\s+/).filter(Boolean));
+        const currentStatuses = rawStatus.split(/\s+/).filter(Boolean);
 
         const rawPreviousStatus = (previousState['ups.status'] ?? '') as string;
         const previousStatuses = new Set(rawPreviousStatus.split(/\s+/).filter(Boolean));
 
         // Emit events when a status code appears
-        if (!previousStatuses.has(ENUTStatus.OL) && currentStatuses.has(ENUTStatus.OL)) {
+        if (!previousStatuses.has(ENUTStatus.OL) && currentStatuses.includes(ENUTStatus.OL)) {
             this.emit('ONLINE');
         }
-        if (!previousStatuses.has(ENUTStatus.OB) && currentStatuses.has(ENUTStatus.OB)) {
+        if (!previousStatuses.has(ENUTStatus.OB) && currentStatuses.includes(ENUTStatus.OB)) {
             this.emit('ONBATT');
         }
-        if (!previousStatuses.has(ENUTStatus.LB) && currentStatuses.has(ENUTStatus.LB)) {
+        if (!previousStatuses.has(ENUTStatus.LB) && currentStatuses.includes(ENUTStatus.LB)) {
             this.emit('LOWBATT');
         }
-        if (!previousStatuses.has(ENUTStatus.FSD) && currentStatuses.has(ENUTStatus.FSD)) {
+        if (!previousStatuses.has(ENUTStatus.FSD) && currentStatuses.includes(ENUTStatus.FSD)) {
             this.emit('FSD');
         }
-        if (!previousStatuses.has(ENUTStatus.RB) && currentStatuses.has(ENUTStatus.RB)) {
+        if (!previousStatuses.has(ENUTStatus.RB) && currentStatuses.includes(ENUTStatus.RB)) {
             this.emit('REPLBATT');
         }
-        if (!previousStatuses.has(ENUTStatus.CAL) && currentStatuses.has(ENUTStatus.CAL)) {
+        if (!previousStatuses.has(ENUTStatus.CAL) && currentStatuses.includes(ENUTStatus.CAL)) {
             this.emit('CAL');
         }
-        if (!previousStatuses.has(ENUTStatus.OFF) && currentStatuses.has(ENUTStatus.OFF)) {
+        if (!previousStatuses.has(ENUTStatus.OFF) && currentStatuses.includes(ENUTStatus.OFF)) {
             this.emit('OFF');
         }
-        if (!previousStatuses.has(ENUTStatus.BYPASS) && currentStatuses.has(ENUTStatus.BYPASS)) {
+        if (!previousStatuses.has(ENUTStatus.BYPASS) && currentStatuses.includes(ENUTStatus.BYPASS)) {
             this.emit('BYPASS');
         }
 
         // Emit events when a status code disappears
-        if (previousStatuses.has(ENUTStatus.OFF) && !currentStatuses.has(ENUTStatus.OFF)) {
+        if (previousStatuses.has(ENUTStatus.OL) && !currentStatuses.includes(ENUTStatus.OL)) {
+            this.emit('NOTOL');
+        }
+        if (previousStatuses.has(ENUTStatus.OB) && !currentStatuses.includes(ENUTStatus.OB)) {
+            this.emit('NOTOB');
+        }
+        if (previousStatuses.has(ENUTStatus.LB) && !currentStatuses.includes(ENUTStatus.LB)) {
+            this.emit('NOTLB');
+        }
+        if (previousStatuses.has(ENUTStatus.FSD) && !currentStatuses.includes(ENUTStatus.FSD)) {
+            this.emit('NOTFSD');
+        }
+        if (previousStatuses.has(ENUTStatus.RB) && !currentStatuses.includes(ENUTStatus.RB)) {
+            this.emit('NOTRB');
+        }
+        if (previousStatuses.has(ENUTStatus.OFF) && !currentStatuses.includes(ENUTStatus.OFF)) {
             this.emit('NOTOFF');
         }
-        if (previousStatuses.has(ENUTStatus.CAL) && !currentStatuses.has(ENUTStatus.CAL)) {
+        if (previousStatuses.has(ENUTStatus.CAL) && !currentStatuses.includes(ENUTStatus.CAL)) {
             this.emit('NOTCAL');
         }
-        if (previousStatuses.has(ENUTStatus.BYPASS) && !currentStatuses.has(ENUTStatus.BYPASS)) {
+        if (previousStatuses.has(ENUTStatus.BYPASS) && !currentStatuses.includes(ENUTStatus.BYPASS)) {
             this.emit('NOTBYPASS');
         }
 

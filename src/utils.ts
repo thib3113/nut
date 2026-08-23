@@ -41,10 +41,13 @@ export const parseLine = (line: string): Array<string> => {
     return parts;
 };
 
+/**
+ * Parse a LIST response into an array of strings.
+ *
+ * Note: The caller must call checkError() before passing the response to this function.
+ */
 export const parseList = (listOutput: string): Array<string> => {
     debug('parseList: %o', listOutput);
-
-    checkError(listOutput);
 
     const lines = listOutput.split('\n');
 
@@ -52,13 +55,13 @@ export const parseList = (listOutput: string): Array<string> => {
     const linePrefix = firstLine.slice(2).join(' ');
     if (firstLine.slice(0, 2).join(' ') !== 'BEGIN LIST' || !linePrefix) {
         debug('received invalid list (bad BEGIN) : %O', listOutput);
-        throw new Error('fail to parse list (bad BEGIN)');
+        throw new Error('failed to parse list (bad BEGIN)');
     }
 
     const lastLine = parseLine(lines.pop() ?? '');
     if (lastLine.slice(0, 2).join(' ') !== 'END LIST' || lastLine.slice(2).join(' ') !== linePrefix) {
         debug('received invalid list (bad END) : %O', listOutput);
-        throw new Error('fail to parse list (bad END)');
+        throw new Error('failed to parse list (bad END)');
     }
 
     const prefixWithSpaceLength = linePrefix.length + 1;
@@ -103,7 +106,8 @@ export const variableTypeConverter = (
 };
 
 export const errorMessageToError = (str: string): never => {
-    switch (str?.toUpperCase()) {
+    const normalizedMessage = (str ?? '').replace(/_/g, '-').replace(/ /g, '-');
+    switch (normalizedMessage.toUpperCase()) {
         case 'ACCESS-DENIED':
             throw new AccessDeniedError();
         case 'UNKNOWN-UPS':
@@ -156,9 +160,15 @@ export const errorMessageToError = (str: string): never => {
 };
 
 export const checkError = (message: string): string => {
-    if (message?.startsWith('ERR')) {
-        const errorMessage = message.replace('ERR ', '');
+    if (!message) {
+        throw new Error('Empty response from server');
+    }
 
+    if (message.startsWith('ERR')) {
+        const errorMessage = message.slice(4).trim();
+        if (!errorMessage) {
+            throw new UnknownError('ERR (no code)');
+        }
         errorMessageToError(errorMessage);
     }
 
@@ -167,13 +177,13 @@ export const checkError = (message: string): string => {
 
 /**
  * Escapes a command part for safe transmission over the NUT protocol.
+ * - Removes all ASCII control characters (0x00-0x1F) to prevent command injection
  * - Escapes backslashes: \ → \\
  * - Escapes double quotes: " → \"
- * - Removes newlines and carriage returns to prevent command injection
  */
 export const escapeCommandPart = (part: string): string => {
     return part
+        .replace(/[\x00-\x1F]/g, '')
         .replace(/\\/g, '\\\\')
-        .replace(/"/g, '\\"')
-        .replace(/[\r\n]/g, '');
+        .replace(/"/g, '\\"');
 };

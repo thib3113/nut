@@ -2,6 +2,7 @@ import { ENUTStatus } from './ENUTStatus.js';
 import { VarNotSupportedError } from './Errors/index.js';
 import type { NUTClient } from './NUTClient.js';
 import { nutVariablesNames } from './NUTVariables.js';
+import type { TrackingOptions } from './TrackingTypes.js';
 
 export class UPS {
     #client: NUTClient;
@@ -13,7 +14,7 @@ export class UPS {
     ) {
         this.#client = client;
         if (!this.name) {
-            throw new Error('fail to init UPS');
+            throw new Error('failed to init UPS');
         }
     }
 
@@ -41,8 +42,8 @@ export class UPS {
         return this.#client.getVariableRange(this.name, variable);
     }
 
-    async setVariable(variable: nutVariablesNames, value: unknown): ReturnType<NUTClient['setVariable']> {
-        return this.#client.setVariable(this.name, variable, value);
+    async setVariable(variable: nutVariablesNames, value: unknown, options?: TrackingOptions): ReturnType<NUTClient['setVariable']> {
+        return this.#client.setVariable(this.name, variable, value, options);
     }
 
     async getVariable(variable: nutVariablesNames): ReturnType<NUTClient['getVariable']> {
@@ -53,8 +54,8 @@ export class UPS {
         return this.#client.getCommandDescription(this.name, command);
     }
 
-    async runCommand(command: string): ReturnType<NUTClient['runCommand']> {
-        return this.#client.runCommand(this.name, command);
+    async runCommand(command: string, param?: string, options?: TrackingOptions): ReturnType<NUTClient['runCommand']> {
+        return this.#client.runCommand(this.name, command, param, options);
     }
 
     async listClients(): ReturnType<NUTClient['listClients']> {

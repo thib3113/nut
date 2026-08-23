@@ -26,7 +26,7 @@
 )
 [![NPM](https://nodei.co/npm/nut-client.png)](https://nodei.co/npm/nut-client/)
 
-**Supported Node.js versions:** >=22
+**Supported Node.js versions:** >=18
 
 
 
@@ -49,11 +49,11 @@ npm install nut-client
 
   const client = new NUTClient('127.0.0.1', 3493);
 
-  console.log(client.listUPS());
-  console.log(client.listVariables('ups'));
+  console.log(await client.listUPS());
+  console.log(await client.listVariables('ups'));
 
   //manual command
-  console.log(client.send(['LOGIN', "myups"]))
+  console.log(await client.send(['LIST', 'VAR', 'myups']));
   ```
 
 - **Parallel Request Handling** : Unlike other NUT libraries, `nut-client` manages an internal queue to handle parallel requests without conflicts, using Promises for efficient request handling.
@@ -103,12 +103,18 @@ npm install nut-client
   });
 
   // listen on specific variable changed
-  monitor.on('VARIABLE_CHANGED', (key: string, oldValue: number, newValue: number) => {
-    if(key !== "battery.charge" || isNaN(oldValue) || isNaN(newValue)) {
+  monitor.on('VARIABLE_CHANGED', (key: string, oldValue: string, newValue: string) => {
+    if(key !== "battery.charge") {
       return;
     }
 
-    console.log(`battery is ${oldValue > newValue ? 'dis':''}charging`)
+    const oldVal = parseFloat(oldValue);
+    const newVal = parseFloat(newValue);
+    if (isNaN(oldVal) || isNaN(newVal)) {
+      return;
+    }
+
+    console.log(`battery is ${oldVal > newVal ? 'dis':''}charging`)
   })
 
   // listen on all events
@@ -121,6 +127,62 @@ npm install nut-client
 
   await monitor.start();
   ```
+
+- **Command Tracking** : For long-running write operations, enable tracking to get a UUID per command and poll for completion. Only write commands (SET VAR, INSTCMD) are tracked; reads are unaffected. Requires NUT 2.8.0+ (protocol v1.3).
+
+  **Manual polling:**
+  ```ts
+  import { NUTClient } from 'nut-client';
+
+  const client = new NUTClient('127.0.0.1', 3493);
+  await client.connect('user', 'secret');
+
+  // Enable tracking
+  await client.setTracking(true);
+
+  // Long-running command returns immediately with a tracking UUID
+  const result = await client.runCommand('myups', 'shutdown.return', '60');
+  // result = { tracked: true, trackingUid: 'abc-123-def' }
+
+  if (result.tracked && 'trackingUid' in result) {
+    // Poll until the command completes
+    let status;
+    do {
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+      status = await client.getTracking(result.trackingUid);
+      console.log('Status:', status);
+    } while (status === 'PENDING');
+
+    if (status === 'SUCCESS') {
+      console.log('Shutdown completed');
+    } else {
+      console.log('Shutdown failed');
+    }
+  }
+
+  // Disable tracking when done
+  await client.setTracking(false);
+  ```
+
+  **Automatic polling with `followTracking`:**
+  ```ts
+  // Enable tracking
+  await client.setTracking(true);
+
+  // Command with automatic polling - resolves when complete
+  const result = await client.runCommand('myups', 'shutdown.return', '60', {
+    followTracking: true,
+    trackingTimeout: 60000,      // max wait time (default: 30s)
+    trackingPollInterval: 5000   // poll interval (default: 1s)
+  });
+  // result = { tracked: true, status: 'SUCCESS' } or { tracked: true, status: 'ERR' }
+
+  if (result.tracked && result.status === 'SUCCESS') {
+    console.log('Shutdown completed');
+  }
+  ```
+
+  See the [NUT network protocol documentation](https://networkupstools.org/docs/developer-guide.chunked/ar01s09.html) for details on the tracking protocol.
 
 - **Fully Typed with TypeScript (ESM + CJS)** : Built with TypeScript, `nut-client` is distributed in both ESM and CommonJS modules for maximum compatibility.
 

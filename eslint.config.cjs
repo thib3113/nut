@@ -12,18 +12,13 @@ module.exports = [
         files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.mjs', '**/*.cjs'],
         languageOptions: {
             parser: typescriptParser,
-            ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
+            ecmaVersion: 2022, // Allows for the parsing of modern ECMAScript features (Node 18+)
             sourceType: 'module' // Allows for the use of imports
         },
         rules: {
             camelcase: 'off',
-            '@typescript-eslint/camelcase': 'off',
-            '@typescript-eslint/interface-name-prefix': 'off',
             '@typescript-eslint/ban-ts-comment': 'off',
-            indent: 'off', //prettier take it in charge
-            '@typescript-eslint/no-object-literal-type-assertion': 'off',
-            '@typescript-eslint/no-inferrable-types': 'off',
-            '@typescript-eslint/ban-ts-ignore': 'off'
+            indent: 'off' //prettier take it in charge
         }
     }
 ];

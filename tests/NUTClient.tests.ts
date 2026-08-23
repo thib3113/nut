@@ -1,3 +1,10 @@
+/**
+ * Testing strategy:
+ * - Unit tests (this file): Use mocks to test individual components in isolation
+ * - Integration tests (usage.tests.ts): Test real protocol flow with NUT server
+ *
+ * Unit tests verify logic, integration tests verify protocol compliance.
+ */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NUTClient as NUTClientType } from '../src/NUTClient.js';
 import type { RawNUTClient as RawNUTClientType } from '../src/RawNUTClient.js';
@@ -32,6 +39,10 @@ const { mockRawNutClient, mockRawNutClientConstructor, mockVariableTypeConverter
         listUPS: vi.fn<RawNUTClientType['listUPS']>(),
         master: vi.fn<RawNUTClientType['master']>(),
         getMaster: vi.fn<RawNUTClientType['getMaster']>(),
+        setTracking: vi.fn<RawNUTClientType['setTracking']>(),
+        getTracking: vi.fn<RawNUTClientType['getTracking']>(),
+        getUPSDescription: vi.fn<RawNUTClientType['getUPSDescription']>(),
+        forceShutdown: vi.fn<RawNUTClientType['forceShutdown']>(),
         destroy: vi.fn<RawNUTClientType['destroy']>(),
         on: vi.fn(),
         once: vi.fn(),
@@ -170,6 +181,24 @@ describe('NutClient', () => {
         expect(mockRawNutClientConstructor).toHaveBeenCalledWith('127.0.0.1', 3493, undefined);
     });
 
+    describe('connected', () => {
+        it('should expose connected state from underlying client', () => {
+            Object.defineProperty(mockRawNutClient, 'connected', {
+                value: true,
+                writable: true,
+                configurable: true
+            });
+            expect(client.connected).toBe(true);
+
+            Object.defineProperty(mockRawNutClient, 'connected', {
+                value: false,
+                writable: true,
+                configurable: true
+            });
+            expect(client.connected).toBe(false);
+        });
+    });
+
     describe('listUPS', () => {
         it('should list UPS', async () => {
             mockRawNutClient.listUPS.mockResolvedValueOnce(['dummyups "Dummy UPS for testing"']);
@@ -234,7 +263,7 @@ describe('NutClient', () => {
         it('should handle bad message', async () => {
             mockRawNutClient.listVariables.mockResolvedValueOnce(['"" "Dummy Manufacturer"']);
 
-            await expect(() => client.listVariables(testUPSName)).rejects.toThrow('fail to get key from variables');
+            await expect(() => client.listVariables(testUPSName)).rejects.toThrow('failed to get key from variables');
         });
 
         it('should handle variable without value', async () => {
@@ -268,7 +297,7 @@ describe('NutClient', () => {
         it('should handle bad message', async () => {
             mockRawNutClient.listWriteableVariables.mockResolvedValueOnce(['"" "Dummy Manufacturer"']);
 
-            await expect(() => client.listWriteableVariables(testUPSName)).rejects.toThrow('fail to get key from variables');
+            await expect(() => client.listWriteableVariables(testUPSName)).rejects.toThrow('failed to get key from variables');
         });
 
         it('should handle variable without value', async () => {
@@ -376,11 +405,16 @@ describe('NutClient', () => {
             expect(mockRawNutClient.getCommandDescription).toHaveBeenCalledWith(testUPSName, 'driver.reload');
         });
         it('should run command', async () => {
-            const res = crypto.randomUUID();
-            mockRawNutClient.runCommand.mockResolvedValueOnce(res);
-            expect(await client.runCommand(testUPSName, 'load.off')).toBe(res);
+            mockRawNutClient.runCommand.mockResolvedValueOnce('OK');
+            expect(await client.runCommand(testUPSName, 'load.off')).toEqual({ tracked: false, success: true });
             expect(mockRawNutClient.runCommand).toHaveBeenCalledTimes(1);
-            expect(mockRawNutClient.runCommand).toHaveBeenCalledWith(testUPSName, 'load.off');
+            expect(mockRawNutClient.runCommand).toHaveBeenCalledWith(testUPSName, 'load.off', undefined);
+        });
+        it('should run command with param', async () => {
+            mockRawNutClient.runCommand.mockResolvedValueOnce('OK');
+            expect(await client.runCommand(testUPSName, 'load.off', '120')).toEqual({ tracked: false, success: true });
+            expect(mockRawNutClient.runCommand).toHaveBeenCalledTimes(1);
+            expect(mockRawNutClient.runCommand).toHaveBeenCalledWith(testUPSName, 'load.off', '120');
         });
         it('should get variable description', async () => {
             const res = crypto.randomUUID();
@@ -411,9 +445,8 @@ describe('NutClient', () => {
             expect(mockRawNutClient.getVariable).toHaveBeenCalledWith(testUPSName, 'device.description');
         });
         it('should set variable', async () => {
-            const res = crypto.randomUUID();
-            mockRawNutClient.setVariable.mockResolvedValueOnce(res);
-            expect(await client.setVariable(testUPSName, 'device.description', 'desc')).toBe(res);
+            mockRawNutClient.setVariable.mockResolvedValueOnce('OK');
+            expect(await client.setVariable(testUPSName, 'device.description', 'desc')).toEqual({ tracked: false, success: true });
             expect(mockRawNutClient.setVariable).toHaveBeenCalledTimes(1);
             expect(mockRawNutClient.setVariable).toHaveBeenCalledWith(testUPSName, 'device.description', 'desc');
         });
@@ -437,6 +470,41 @@ describe('NutClient', () => {
             expect(mockRawNutClient.getMaster).toHaveBeenCalledTimes(1);
             expect(mockRawNutClient.getMaster).toHaveBeenCalledWith(testUPSName);
         });
+        it('should get UPS description', async () => {
+            const res = 'My UPS Description';
+            mockRawNutClient.getUPSDescription.mockResolvedValueOnce(res);
+            expect(await client.getUPSDescription(testUPSName)).toBe(res);
+            expect(mockRawNutClient.getUPSDescription).toHaveBeenCalledTimes(1);
+            expect(mockRawNutClient.getUPSDescription).toHaveBeenCalledWith(testUPSName);
+        });
+        it('should force shutdown', async () => {
+            const res = 'OK FSD-SET';
+            mockRawNutClient.forceShutdown.mockResolvedValueOnce(res);
+            expect(await client.forceShutdown(testUPSName)).toBe(res);
+            expect(mockRawNutClient.forceShutdown).toHaveBeenCalledTimes(1);
+            expect(mockRawNutClient.forceShutdown).toHaveBeenCalledWith(testUPSName);
+        });
+        it('should set tracking enabled', async () => {
+            const res = 'OK TRACKING';
+            mockRawNutClient.setTracking.mockResolvedValueOnce(res);
+            expect(await client.setTracking(true)).toBe(res);
+            expect(mockRawNutClient.setTracking).toHaveBeenCalledTimes(1);
+            expect(mockRawNutClient.setTracking).toHaveBeenCalledWith(true);
+        });
+        it('should set tracking disabled', async () => {
+            const res = 'OK';
+            mockRawNutClient.setTracking.mockResolvedValueOnce(res);
+            expect(await client.setTracking(false)).toBe(res);
+            expect(mockRawNutClient.setTracking).toHaveBeenCalledTimes(1);
+            expect(mockRawNutClient.setTracking).toHaveBeenCalledWith(false);
+        });
+        it('should get tracking status', async () => {
+            const uuid = 'abc-123-def';
+            mockRawNutClient.getTracking.mockResolvedValueOnce('SUCCESS');
+            expect(await client.getTracking(uuid)).toBe('SUCCESS');
+            expect(mockRawNutClient.getTracking).toHaveBeenCalledTimes(1);
+            expect(mockRawNutClient.getTracking).toHaveBeenCalledWith(uuid);
+        });
 
         it('should call destroy on the underlying RawNUTClient', () => {
             mockRawNutClient.destroy = vi.fn();
@@ -456,6 +524,89 @@ describe('NutClient', () => {
 
             // First destroy calls through, second is a no-op (guard)
             expect(mockRawNutClient.destroy).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('pollTracking', () => {
+        it('should return SUCCESS when tracking completes successfully', async () => {
+            const trackingUid = 'test-uid-123';
+            mockRawNutClient.runCommand.mockResolvedValueOnce(`OK TRACKING ${trackingUid}`);
+            mockRawNutClient.getTracking.mockResolvedValueOnce('SUCCESS');
+
+            const result = await client.runCommand(testUPSName, 'load.off', undefined, { followTracking: true });
+
+            expect(result).toEqual({ tracked: true, status: 'SUCCESS' });
+            expect(mockRawNutClient.getTracking).toHaveBeenCalledWith(trackingUid);
+        });
+
+        it('should return ERR when tracking fails', async () => {
+            const trackingUid = 'test-uid-456';
+            mockRawNutClient.runCommand.mockResolvedValueOnce(`OK TRACKING ${trackingUid}`);
+            mockRawNutClient.getTracking.mockResolvedValueOnce('ERR');
+
+            const result = await client.runCommand(testUPSName, 'load.off', undefined, { followTracking: true });
+
+            expect(result).toEqual({ tracked: true, status: 'ERR' });
+            expect(mockRawNutClient.getTracking).toHaveBeenCalledWith(trackingUid);
+        });
+
+        it('should throw on tracking timeout', async () => {
+            vi.useFakeTimers();
+            const trackingUid = 'test-uid-789';
+            mockRawNutClient.runCommand.mockResolvedValueOnce(`OK TRACKING ${trackingUid}`);
+            mockRawNutClient.getTracking.mockResolvedValue('PENDING');
+
+            const resultPromise = client.runCommand(testUPSName, 'load.off', undefined, {
+                followTracking: true,
+                trackingTimeout: 100,
+                trackingPollInterval: 50
+            });
+
+            const advancePromise = vi.advanceTimersByTimeAsync(200);
+
+            await expect(resultPromise).rejects.toThrow(`Tracking timeout after 100ms for UUID: ${trackingUid}`);
+            await advancePromise;
+
+            vi.useRealTimers();
+        });
+
+        it('should poll until SUCCESS after multiple PENDING responses', async () => {
+            vi.useFakeTimers();
+            try {
+                const trackingUid = 'test-uid-poll';
+                mockRawNutClient.runCommand.mockResolvedValueOnce(`OK TRACKING ${trackingUid}`);
+                mockRawNutClient.getTracking
+                    .mockResolvedValueOnce('PENDING')
+                    .mockResolvedValueOnce('PENDING')
+                    .mockResolvedValueOnce('SUCCESS');
+
+                const resultPromise = client.runCommand(testUPSName, 'load.off', undefined, {
+                    followTracking: true,
+                    trackingTimeout: 5000,
+                    trackingPollInterval: 100
+                });
+
+                await vi.advanceTimersByTimeAsync(0);
+                await vi.advanceTimersByTimeAsync(100);
+                await vi.advanceTimersByTimeAsync(100);
+
+                const result = await resultPromise;
+                expect(result).toEqual({ tracked: true, status: 'SUCCESS' });
+                expect(mockRawNutClient.getTracking).toHaveBeenCalledTimes(3);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should work with setVariable and followTracking', async () => {
+            const trackingUid = 'test-uid-setvar';
+            mockRawNutClient.setVariable.mockResolvedValueOnce(`OK TRACKING ${trackingUid}`);
+            mockRawNutClient.getTracking.mockResolvedValueOnce('SUCCESS');
+
+            const result = await client.setVariable(testUPSName, 'device.description', 'value', { followTracking: true });
+
+            expect(result).toEqual({ tracked: true, status: 'SUCCESS' });
+            expect(mockRawNutClient.getTracking).toHaveBeenCalledWith(trackingUid);
         });
     });
 
@@ -631,6 +782,12 @@ describe('NutClient', () => {
                     return discCalls[discCalls.length - 1]?.[1] as () => void;
                 };
 
+                // Helper: check delay is within ±20% jitter of expected base value
+                const expectDelayNear = (actual: number, base: number) => {
+                    expect(actual).toBeGreaterThanOrEqual(Math.round(base * 0.8));
+                    expect(actual).toBeLessThanOrEqual(Math.round(base * 1.2));
+                };
+
                 // === Attempt 1 ===
                 disconnectedHandler();
                 await vi.advanceTimersByTimeAsync(50); // fires 10ms reconnect timer
@@ -639,19 +796,20 @@ describe('NutClient', () => {
                 getLastDisconnectedOnceHandler()();
                 await vi.advanceTimersByTimeAsync(0); // process microtasks → schedules attempt 2
 
-                // After attempt 1 fails, scheduleReconnect is called immediately, emitting 'reconnecting' for attempt 2
-                expect(reconnectingEvents).toEqual([10, 20]);
+                // First delay is exact (initial value), subsequent delays have ±20% jitter
+                expect(reconnectingEvents[0]).toBe(10);
+                expectDelayNear(reconnectingEvents[1], 20);
 
                 // === Attempt 2 ===
-                vi.runOnlyPendingTimers(); // fires 20ms reconnect timer
+                vi.runOnlyPendingTimers(); // fires reconnect timer (jittered ~16-24ms)
                 await vi.advanceTimersByTimeAsync(0);
 
                 // Fail attempt 2
                 getLastDisconnectedOnceHandler()();
                 await vi.advanceTimersByTimeAsync(0); // process microtasks → schedules attempt 3
 
-                // After attempt 2 fails, scheduleReconnect is called immediately, emitting 'reconnecting' for attempt 3
-                expect(reconnectingEvents).toEqual([10, 20, 40]);
+                // Third delay base = jittered_second_delay * 2, then ±20% jitter again
+                expectDelayNear(reconnectingEvents[2], reconnectingEvents[1] * 2);
 
                 reconnectClient.destroy();
             } finally {
@@ -752,6 +910,196 @@ describe('NutClient', () => {
 
                 // Verify re-login for tracked UPS
                 expect(mockRawNutClient.login).toHaveBeenCalledWith('myups');
+
+                reconnectClient.destroy();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should resolve immediately when newClient is already connected (race condition)', async () => {
+            vi.useFakeTimers();
+            try {
+                const reconnectClient = new NUTClient('127.0.0.1', 3493, {
+                    autoReconnect: true,
+                    reconnectDelay: 10
+                });
+
+                const reconnectedPromise = new Promise<void>((resolve) => {
+                    reconnectClient.on('reconnected', resolve);
+                });
+
+                const onCalls = (mockRawNutClient.on as ReturnType<typeof vi.fn>).mock.calls;
+                const disconnectOnCalls = onCalls.filter((c: unknown[]) => c[0] === 'disconnected');
+                const disconnectedHandler = disconnectOnCalls[disconnectOnCalls.length - 1]?.[1] as () => void;
+
+                Object.defineProperty(mockRawNutClient, 'connected', {
+                    value: false,
+                    writable: true,
+                    configurable: true
+                });
+
+                disconnectedHandler();
+
+                Object.defineProperty(mockRawNutClient, 'connected', {
+                    value: true,
+                    writable: true,
+                    configurable: true
+                });
+
+                await vi.advanceTimersByTimeAsync(50);
+                await vi.advanceTimersByTimeAsync(0);
+                await expect(reconnectedPromise).resolves.toBeUndefined();
+                reconnectClient.destroy();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should continue reconnect even if re-login UPS fails during session restore', async () => {
+            vi.useFakeTimers();
+            try {
+                const reconnectClient = new NUTClient('127.0.0.1', 3493, {
+                    autoReconnect: true,
+                    reconnectDelay: 10,
+                    username: 'admin',
+                    password: 'secret'
+                });
+
+                mockRawNutClient.login.mockResolvedValue('OK');
+                await reconnectClient.login('myups');
+
+                mockRawNutClient.connect.mockClear();
+                mockRawNutClient.login.mockClear();
+
+                const reconnectedPromise = new Promise<void>((resolve) => {
+                    reconnectClient.on('reconnected', resolve);
+                });
+
+                const onCalls = (mockRawNutClient.on as ReturnType<typeof vi.fn>).mock.calls;
+                const disconnectOnCalls = onCalls.filter((c: unknown[]) => c[0] === 'disconnected');
+                const disconnectedHandler = disconnectOnCalls[disconnectOnCalls.length - 1]?.[1] as () => void;
+
+                Object.defineProperty(mockRawNutClient, 'connected', {
+                    value: false,
+                    writable: true,
+                    configurable: true
+                });
+
+                disconnectedHandler();
+                await vi.advanceTimersByTimeAsync(50);
+
+                mockRawNutClient.login.mockRejectedValueOnce(new Error('login failed during restore'));
+
+                const onceCalls = (mockRawNutClient.once as ReturnType<typeof vi.fn>).mock.calls;
+                const connectedHandler = onceCalls.find((c: unknown[]) => c[0] === 'connected')?.[1] as () => void;
+                expect(connectedHandler).toBeDefined();
+                connectedHandler();
+
+                await vi.advanceTimersByTimeAsync(0);
+                await expect(reconnectedPromise).resolves.toBeUndefined();
+
+                expect(mockRawNutClient.connect).toHaveBeenCalledWith('admin', 'secret');
+                expect(mockRawNutClient.login).toHaveBeenCalledWith('myups');
+
+                reconnectClient.destroy();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should handle destroy() during reconnect', async () => {
+            vi.useFakeTimers();
+            try {
+                const reconnectClient = new NUTClient('127.0.0.1', 3493, {
+                    autoReconnect: true,
+                    reconnectDelay: 100
+                });
+
+                const destroyedPromise = new Promise<void>((resolve) => {
+                    reconnectClient.on('destroyed', resolve);
+                });
+
+                // Trigger disconnect → starts reconnect flow
+                const onCalls = (mockRawNutClient.on as ReturnType<typeof vi.fn>).mock.calls;
+                const disconnectOnCalls = onCalls.filter((c: unknown[]) => c[0] === 'disconnected');
+                const disconnectedHandler = disconnectOnCalls[disconnectOnCalls.length - 1]?.[1] as () => void;
+                disconnectedHandler();
+
+                // Advance timer partially (reconnect is scheduled but not yet executed)
+                await vi.advanceTimersByTimeAsync(50);
+
+                // Destroy during reconnect delay — should not throw
+                expect(() => reconnectClient.destroy()).not.toThrow();
+
+                await expect(destroyedPromise).resolves.toBeUndefined();
+
+                // Record constructor call count to verify no further RawNUTClient is created
+                const constructorCallsAfterDestroy = mockRawNutClientConstructor.mock.calls.length;
+
+                // Advance remaining timers — no reconnect should fire
+                await vi.advanceTimersByTimeAsync(200);
+
+                expect(mockRawNutClientConstructor.mock.calls.length).toBe(constructorCallsAfterDestroy);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should restore TLS after reconnect', async () => {
+            vi.useFakeTimers();
+            try {
+                const reconnectClient = new NUTClient('127.0.0.1', 3493, {
+                    autoReconnect: true,
+                    reconnectDelay: 10,
+                    username: 'admin',
+                    password: 'secret'
+                });
+
+                // Call startTLS
+                mockRawNutClient.startTLS.mockResolvedValueOnce(undefined);
+                await reconnectClient.startTLS({ rejectUnauthorized: false });
+                expect(mockRawNutClient.startTLS).toHaveBeenCalledWith({ rejectUnauthorized: false });
+
+                // Capture initial startTLS invocation order, then clear for reconnect phase
+                const initialStartTLSOrder = mockRawNutClient.startTLS.mock.invocationCallOrder[0];
+                mockRawNutClient.startTLS.mockClear();
+                mockRawNutClient.connect.mockClear();
+
+                const reconnectedPromise = new Promise<void>((resolve) => {
+                    reconnectClient.on('reconnected', resolve);
+                });
+
+                // Trigger disconnect
+                const onCalls = (mockRawNutClient.on as ReturnType<typeof vi.fn>).mock.calls;
+                const disconnectOnCalls = onCalls.filter((c: unknown[]) => c[0] === 'disconnected');
+                const disconnectedHandler = disconnectOnCalls[disconnectOnCalls.length - 1]?.[1] as () => void;
+                disconnectedHandler();
+
+                // Advance to reconnect timer
+                await vi.advanceTimersByTimeAsync(50);
+
+                // Simulate successful connection
+                const onceCalls = (mockRawNutClient.once as ReturnType<typeof vi.fn>).mock.calls;
+                const connectedHandler = onceCalls.find((c: unknown[]) => c[0] === 'connected')?.[1] as () => void;
+                expect(connectedHandler).toBeDefined();
+                connectedHandler();
+
+                // Let restoreSession complete
+                await vi.advanceTimersByTimeAsync(0);
+                await expect(reconnectedPromise).resolves.toBeUndefined();
+
+                // Verify TLS was restored BEFORE auth
+                expect(mockRawNutClient.startTLS).toHaveBeenCalledWith({ rejectUnauthorized: false });
+                expect(mockRawNutClient.connect).toHaveBeenCalledWith('admin', 'secret');
+
+                // Verify order: startTLS should be called before connect
+                const startTLSCallOrder = mockRawNutClient.startTLS.mock.invocationCallOrder[0];
+                const connectCallOrder = mockRawNutClient.connect.mock.invocationCallOrder[0];
+                expect(startTLSCallOrder).toBeLessThan(connectCallOrder);
+
+                // Also verify initial startTLS happened before reconnect startTLS
+                expect(initialStartTLSOrder).toBeLessThan(startTLSCallOrder);
 
                 reconnectClient.destroy();
             } finally {

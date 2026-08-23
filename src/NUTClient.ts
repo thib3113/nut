@@ -5,10 +5,10 @@ import { parseLine, variableTypeConverter } from './utils.js';
 import type { nutVariables, nutVariablesNames } from './NUTVariables.js';
 import { TypedEmitter } from 'tiny-typed-emitter';
 import { createDebugger } from './utils.internal.js';
+import type { ConnectionOptions } from 'node:tls';
+import type { CommandResult, TrackedResult, TrackingOptions } from './TrackingTypes.js';
 
 export interface INUTClientOptions extends IRawNUTClientOptions {
-    /** Default timeout for commands (ms). If not set, commands have no timeout. */
-    timeout?: number;
     /** Enable auto-reconnect on connection loss. Default: false */
     autoReconnect?: boolean;
     /** Initial delay before reconnect attempt (ms). Default: 1000 */
@@ -65,6 +65,10 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     #password?: string;
     #loggedInUps: Set<string> = new Set();
 
+    // TLS state (restored automatically after reconnect)
+    #tlsActive = false;
+    #tlsOptions?: Omit<ConnectionOptions, 'socket' | 'host' | 'port'>;
+
     // Connection parameters (stored for reconnect)
     #host: string;
     #port: number;
@@ -90,6 +94,14 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     }
 
     /**
+     * Check if the client is currently connected to the NUT server.
+     * @returns true if connected, false otherwise
+     */
+    get connected(): boolean {
+        return this.#client.connected;
+    }
+
+    /**
      * Static factory method that creates a NUTClient and optionally
      * authenticates when credentials are provided in options.
      * Credentials are cleared from stored options after successful authentication
@@ -101,9 +113,14 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     static async create(host: string, port?: number, options?: INUTClientOptions): Promise<NUTClient> {
         const client = new NUTClient(host, port, options);
         if (options?.username && options?.password) {
-            await client.connect(options.username, options.password);
+            try {
+                await client.connect(options.username, options.password);
+            } catch (err) {
+                client.destroy();
+                throw err;
+            }
 
-            // Clear credentials from memory after successful authentication
+            // Clear credentials from options object (they remain stored in #username/#password for reconnect)
             if (client.#options) {
                 delete client.#options.username;
                 delete client.#options.password;
@@ -152,8 +169,10 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
             this.#doReconnect();
         }, delay);
 
-        // Increase delay for the next attempt (exponential backoff, capped)
-        this.#currentReconnectDelay = Math.min(this.#currentReconnectDelay * this.#reconnectBackoff, this.#maxReconnectDelay);
+        // Increase delay for the next attempt (exponential backoff, capped, with ±20% jitter to prevent thundering herd)
+        const baseDelay = Math.min(this.#currentReconnectDelay * this.#reconnectBackoff, this.#maxReconnectDelay);
+        const jitter = baseDelay * 0.2 * (Math.random() * 2 - 1);
+        this.#currentReconnectDelay = Math.max(1, Math.round(baseDelay + jitter));
     }
 
     async #doReconnect(): Promise<void> {
@@ -233,6 +252,11 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     }
 
     async #restoreSession(): Promise<void> {
+        // Restore TLS first — NUT protocol requires TLS before sending credentials
+        if (this.#tlsActive && this.#tlsOptions !== undefined) {
+            await this.#client.startTLS(this.#tlsOptions);
+        }
+
         if (this.#username && this.#password) {
             await this.#client.connect(this.#username, this.#password);
         }
@@ -279,8 +303,10 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
      *
      * @see {RawNUTClient.startTLS} to check the arguments allowed
      */
-    async startTLS(...args: Parameters<RawNUTClient['startTLS']>): ReturnType<RawNUTClient['startTLS']> {
-        return this.#client.startTLS(...args);
+    async startTLS(tlsOptions?: Omit<ConnectionOptions, 'socket' | 'host' | 'port'>): ReturnType<RawNUTClient['startTLS']> {
+        this.#tlsOptions = tlsOptions;
+        await this.#client.startTLS(tlsOptions);
+        this.#tlsActive = true;
     }
 
     /**
@@ -303,7 +329,8 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
         return this.#client.help();
     }
     /**
-     * list all UPS
+     * List all available UPS devices.
+     * @returns Array of {@link UPS} objects with parsed name and description.
      */
     async listUPS(): Promise<Array<UPS>> {
         return this.#client.listUPS().then((res) =>
@@ -335,7 +362,7 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
                 const [key, value] = parseLine(line) as [nutVariablesNames, string];
 
                 if (!key) {
-                    throw new Error('fail to get key from variables');
+                    throw new Error('failed to get key from variables');
                 }
 
                 variables[key] = value ?? '';
@@ -383,9 +410,19 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
      * run a command on the UPS
      * @param ups
      * @param command
+     * @param param - Optional command parameter (e.g., delay in seconds)
+     * @param options - Optional tracking options (followTracking, trackingTimeout, trackingPollInterval)
      */
-    async runCommand(ups: UPSName, command: string): ReturnType<RawNUTClient['runCommand']> {
-        return this.#client.runCommand(ups, command);
+    async runCommand(ups: UPSName, command: string, param?: string, options?: TrackingOptions): Promise<CommandResult | TrackedResult> {
+        const response = await this.#client.runCommand(ups, command, param);
+        const result = this.#parseCommandResponse(response);
+
+        if (options?.followTracking && result.tracked) {
+            const status = await this.#pollTracking(result.trackingUid, options);
+            return { tracked: true, status };
+        }
+
+        return result;
     }
 
     /**
@@ -411,9 +448,23 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
      * @param ups
      * @param variable
      * @param value
+     * @param options - Optional tracking options (followTracking, trackingTimeout, trackingPollInterval)
      */
-    async setVariable(ups: UPSName, variable: nutVariablesNames, value: unknown): ReturnType<RawNUTClient['setVariable']> {
-        return this.#client.setVariable(ups, variable, value);
+    async setVariable(
+        ups: UPSName,
+        variable: nutVariablesNames,
+        value: unknown,
+        options?: TrackingOptions
+    ): Promise<CommandResult | TrackedResult> {
+        const response = await this.#client.setVariable(ups, variable, value);
+        const result = this.#parseCommandResponse(response);
+
+        if (options?.followTracking && result.tracked) {
+            const status = await this.#pollTracking(result.trackingUid, options);
+            return { tracked: true, status };
+        }
+
+        return result;
     }
 
     /**
@@ -434,10 +485,6 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     }
 
     /**
-     * Allow to list variables
-     * @param ups
-     */
-    /**
      * List writeable variables for a UPS.
      * @returns Object mapping variable names to their current values
      * @remarks Unlike RawNUTClient which returns raw strings, this method parses the response into a key-value object
@@ -449,7 +496,7 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
                 const [key, value] = parseLine(line);
 
                 if (!key) {
-                    throw new Error('fail to get key from variables');
+                    throw new Error('failed to get key from variables');
                 }
 
                 variables[key] = value ?? '';
@@ -496,6 +543,97 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
     }
 
     /**
+     * Get the description of a UPS (from ups.conf desc= field).
+     * @param ups - The name of the UPS
+     * @returns The UPS description string
+     */
+    async getUPSDescription(ups: UPSName): ReturnType<RawNUTClient['getUPSDescription']> {
+        return this.#client.getUPSDescription(ups);
+    }
+
+    /**
+     * Force a shutdown on the UPS (set the FSD flag).
+     * @param ups - The name of the UPS
+     * @returns The server response
+     * @remarks Requires master or FSD permission. Use with caution.
+     */
+    async forceShutdown(ups: UPSName): ReturnType<RawNUTClient['forceShutdown']> {
+        return this.#client.forceShutdown(ups);
+    }
+
+    /**
+     * Enable or disable command tracking for idempotent write operations.
+     *
+     * When tracking is enabled, write commands (SET VAR, INSTCMD) return
+     * `OK TRACKING <uuid>` instead of `OK`. The UUID can be polled via
+     * {@link getTracking} to check the command outcome.
+     *
+     * @param enabled - `true` to enable tracking, `false` to disable
+     * @remarks Requires NUT 2.8.0+ (protocol v1.3) on the server.
+     */
+    async setTracking(enabled: boolean): ReturnType<RawNUTClient['setTracking']> {
+        return this.#client.setTracking(enabled);
+    }
+
+    /**
+     * Get the status of a previously tracked write command by its UUID.
+     *
+     * @param uuid - The tracking UUID returned by a write command
+     * @returns `'PENDING'`, `'SUCCESS'`, or `'ERR'`
+     * @remarks Requires NUT 2.8.0+ (protocol v1.3) on the server.
+     */
+    async getTracking(uuid: string): ReturnType<RawNUTClient['getTracking']> {
+        return this.#client.getTracking(uuid);
+    }
+
+    /**
+     * Parse a command response to detect tracking.
+     * @param response - The raw response from the server
+     * @returns CommandResult with tracking info
+     */
+    #parseCommandResponse(response: string): CommandResult {
+        if (response.startsWith('OK TRACKING ')) {
+            const trackingUid = response.slice('OK TRACKING '.length).trim();
+            return { tracked: true, trackingUid };
+        }
+        return { tracked: false, success: true };
+    }
+
+    /**
+     * Poll tracking status until completion or timeout.
+     * @param trackingUid - The tracking UUID to poll
+     * @param options - Polling options
+     * @returns The final tracking status
+     * @throws Error if timeout is reached
+     */
+    async #pollTracking(trackingUid: string, options?: TrackingOptions): Promise<'SUCCESS' | 'ERR'> {
+        const timeout = options?.trackingTimeout ?? 30000;
+        const pollInterval = options?.trackingPollInterval ?? 1000;
+        const startTime = Date.now();
+
+        while (true) {
+            const status = await this.getTracking(trackingUid);
+
+            if (status === 'SUCCESS') {
+                return 'SUCCESS';
+            }
+            if (status === 'ERR') {
+                return 'ERR';
+            }
+
+            if (status !== 'PENDING') {
+                throw new Error(`Unexpected tracking status: ${status}`);
+            }
+
+            if (Date.now() - startTime >= timeout) {
+                throw new Error(`Tracking timeout after ${timeout}ms for UUID: ${trackingUid}`);
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, pollInterval));
+        }
+    }
+
+    /**
      * Destroy the client and release all resources.
      * After calling destroy(), the client cannot be reused.
      */
@@ -513,7 +651,6 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
         }
 
         // Destroy the underlying RawNUTClient
-        this.#client.removeAllListeners();
         this.#client.destroy();
 
         // Emit destroyed before removing listeners so subscribers can react
@@ -521,5 +658,9 @@ export class NUTClient extends TypedEmitter<NUTClientEvents> {
 
         // Remove all event listeners from the EventEmitter
         this.removeAllListeners();
+
+        // Clear stored credentials
+        this.#username = undefined;
+        this.#password = undefined;
     }
 }

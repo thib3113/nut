@@ -70,7 +70,7 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
         return this.#connected;
     }
 
-    set connected(value: boolean) {
+    private set connected(value: boolean) {
         this.#connected = value;
 
         if (value) {
@@ -126,11 +126,8 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
             this.#tlsClient = undefined;
         }
 
-        // Destroy TCP socket
-        if (this.#tcpClient) {
-            this.#tcpClient.removeAllListeners();
-            this.#tcpClient.destroy();
-        }
+        this.#tcpClient.removeAllListeners();
+        this.#tcpClient.destroy();
 
         // Kill the command queue (empties pending tasks, prevents new ones)
         this.#cmdQueue.kill();
@@ -151,22 +148,22 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
             this.#receivedMessage += receivedString;
 
             //check lists
-            if (receivedString.includes('LIST')) {
-                const lastBegin = receivedString.lastIndexOf('BEGIN LIST');
-                const lastEnd = receivedString.lastIndexOf('END LIST');
+            if (/(?:^|\n)(?:BEGIN LIST|END LIST)/.test(this.#receivedMessage)) {
+                const lastBegin = this.#receivedMessage.lastIndexOf('BEGIN LIST');
+                const lastEnd = this.#receivedMessage.lastIndexOf('END LIST');
                 debug(
-                    'LIST detection: receivedString=%o, lastBegin=%o, lastEnd=%o, receivingList=%o',
-                    receivedString,
+                    'LIST detection: receivedMessage=%o, lastBegin=%o, lastEnd=%o, receivingList=%o',
+                    this.#receivedMessage,
                     lastBegin,
                     lastEnd,
                     this.#receivingList
                 );
-                if (lastBegin > lastEnd && (lastBegin === 0 || receivedString[lastBegin - 1] === '\n')) {
+                if (lastBegin > lastEnd) {
                     this.#receivingList = true;
-                    debug('Setting receivingList=true based on chunk');
-                } else if (lastEnd > lastBegin && (lastEnd === 0 || receivedString[lastEnd - 1] === '\n')) {
+                    debug('Setting receivingList=true based on buffer');
+                } else {
                     this.#receivingList = false;
-                    debug('Setting receivingList=false based on chunk');
+                    debug('Setting receivingList=false based on buffer');
                 }
             }
 
@@ -197,6 +194,7 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
             socket.destroySoon();
             const wasConnected = this.#connected;
             this.connected = false;
+            this.#receivingList = false;
 
             // Clean up orphaned callbacks — in-flight commands are rejected
             // via the 'close' listener installed in sendOneByOne.
@@ -210,18 +208,32 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
 
     public async startTLS(tlsOptions?: Omit<ConnectionOptions, 'socket' | 'host' | 'port'>): Promise<void> {
         if (checkError(await this.send(['STARTTLS'])) !== 'OK STARTTLS') {
-            throw new Error('fail to init starttls');
+            throw new Error('failed to init starttls');
         }
 
-        return new Promise<void>((resolve) => {
+        return new Promise<void>((resolve, reject) => {
+            const onSecureConnect = () => {
+                this.#tlsClient?.off('error', onError);
+                resolve();
+            };
+
             this.#tlsClient = tls.connect(
                 {
                     ...tlsOptions,
                     socket: this.#tcpClient
                 },
-                resolve
+                onSecureConnect
             );
 
+            const onError = (err: Error) => {
+                this.#tlsClient?.off('secureConnect', onSecureConnect);
+                reject(err);
+            };
+
+            this.#tlsClient.once('error', onError);
+            this.#tcpClient.removeAllListeners('data');
+            this.#tcpClient.removeAllListeners('error');
+            this.#tcpClient.removeAllListeners('close');
             this.#addListenerToSocket(this.#tlsClient);
         });
     }
@@ -232,6 +244,9 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
         if (!cmd) {
             throw new Error('you need to pass a cmd');
         }
+
+        // Mask credentials in debug output — show first 3 chars to help with debugging
+        const debugCmd = cmd.replace(/"(USERNAME|PASSWORD)"\s+"([^"]*)"/g, (_, type, value) => `"${type}" "${value.substring(0, 3)}***"`);
 
         let timeoutTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -270,13 +285,13 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
                 timeoutTimer = setTimeout(() => reject(new Error('timeout')), timeout);
             });
 
-            debug('send command %s', cmd);
+            debug('send command %s', debugCmd);
             this.client.write(`${cmd}\n`);
 
             return Promise.race([mainPromise, timeoutPromise]);
         }
 
-        debug('send command %s', cmd);
+        debug('send command %s', debugCmd);
         this.client.write(`${cmd}\n`);
 
         return mainPromise;
@@ -302,9 +317,8 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
      * @throws Error if authentication fails
      */
     async connect(username: string, password: string) {
-        if (checkError(await this.send(['USERNAME', username])) !== 'OK' || checkError(await this.send(['PASSWORD', password])) !== 'OK') {
-            throw new Error('Fail to connect');
-        }
+        await this.send(['USERNAME', username]);
+        await this.send(['PASSWORD', password]);
     }
 
     /**
@@ -344,7 +358,7 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
     }
     /**
      * List available UPS devices on the NUT server.
-     * Returns an array of UPS names.
+     * @returns Array of raw protocol strings in format: `'upsname "description"'`
      */
     async listUPS(): Promise<Array<string>> {
         const list = checkError(await this.send(['LIST', 'UPS']));
@@ -414,6 +428,11 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
     /**
      * Set the value of a variable for a UPS.
      * Only works for read-write (RW) variables.
+     *
+     * @param ups - The name of the UPS
+     * @param variable - The variable name
+     * @param value - The value to set
+     * @returns Raw server response ('OK' or 'OK TRACKING <uuid>')
      */
     async setVariable(ups: UPSName, variable: string, value: unknown): Promise<string> {
         return checkError(await this.send(['SET', 'VAR', ups, variable, value?.toString() ?? '']));
@@ -429,10 +448,37 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
 
     /**
      * Run an instant command on a UPS.
-     * Returns the result of the command execution.
+     * @param ups - The name of the UPS
+     * @param command - The command name
+     * @param param - Optional command parameter (e.g., delay in seconds)
+     * @returns Raw server response ('OK' or 'OK TRACKING <uuid>')
      */
-    async runCommand(ups: UPSName, command: string): Promise<string> {
-        return checkError(await this.send(['INSTCMD', ups, command]));
+    async runCommand(ups: UPSName, command: string, param?: string): Promise<string> {
+        const cmdParts = ['INSTCMD', ups, command];
+        if (param !== undefined) {
+            cmdParts.push(param);
+        }
+        return checkError(await this.send(cmdParts));
+    }
+
+    /**
+     * Get the description of a UPS (from ups.conf desc= field).
+     * @param ups - The name of the UPS
+     * @returns The UPS description string, or "Unavailable" if not configured
+     */
+    async getUPSDescription(ups: UPSName): Promise<string> {
+        return parseLine(checkError(await this.send(['GET', 'UPSDESC', ups]))).pop() ?? '';
+    }
+
+    /**
+     * Force a shutdown on the UPS (set the FSD flag).
+     * Used by upsmon primary to signal secondaries to shut down before power loss.
+     * @param ups - The name of the UPS
+     * @returns The server response (e.g., "OK FSD-SET")
+     * @remarks Requires master or FSD permission in upsd.users. Use with caution.
+     */
+    async forceShutdown(ups: UPSName): Promise<string> {
+        return checkError(await this.send(['FSD', ups]));
     }
 
     /**
@@ -458,7 +504,7 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
      * Returns the count of active logins.
      */
     async getNumLogins(ups: UPSName): Promise<number> {
-        return Number(parseLine(checkError(await this.send(['GET', 'NUMLOGINS', ups]))).pop());
+        return Number(parseLine(checkError(await this.send(['GET', 'NUMLOGINS', ups]))).pop() ?? '');
     }
 
     /**
@@ -473,6 +519,41 @@ export class RawNUTClient extends TypedEmitter<RawNUTClientEvents> {
      * Check if this client is master for the UPS
      */
     async getMaster(ups: UPSName): Promise<boolean> {
-        return parseLine(checkError(await this.send(['GET', 'MASTER', ups]))).pop() === 'ON';
+        return (parseLine(checkError(await this.send(['GET', 'MASTER', ups]))).pop() ?? '') === 'ON';
+    }
+
+    /**
+     * Enable or disable command tracking for idempotent write operations.
+     *
+     * When tracking is enabled, write commands (SET VAR, INSTCMD) return
+     * `OK TRACKING <uuid>` instead of `OK`. The NUTClient facade parses this
+     * response into a structured {@link CommandResult} object.
+     *
+     * Each tracked command generates a unique UUID. Read operations (GET VAR, LIST)
+     * are not tracked.
+     *
+     * @param enabled - `true` to enable tracking, `false` to disable
+     * @returns The raw server response (e.g. `'OK TRACKING'` or `'OK'`)
+     * @remarks Requires NUT 2.8.0+ (protocol v1.3) on the server. Use {@link NUTClient}
+     * for automatic parsing and {@link TrackingOptions.followTracking} for automatic polling.
+     */
+    async setTracking(enabled: boolean): Promise<string> {
+        return checkError(await this.send(['SET', 'TRACKING', enabled ? 'ON' : 'OFF']));
+    }
+
+    /**
+     * Get the status of a previously tracked write command by its UUID.
+     *
+     * After enabling tracking via {@link setTracking}, write commands return
+     * `OK TRACKING <uuid>`. This method polls the server for the outcome of
+     * that specific command.
+     *
+     * @param uuid - The tracking UUID returned by a write command
+     * @returns `'PENDING'` if the command is still executing, `'SUCCESS'` if it
+     * completed successfully, or `'ERR'` if it failed
+     * @remarks Requires NUT 2.8.0+ (protocol v1.3) on the server.
+     */
+    async getTracking(uuid: string): Promise<string> {
+        return checkError(await this.send(['GET', 'TRACKING', uuid]));
     }
 }
