@@ -26,19 +26,21 @@
 )
 [![NPM](https://nodei.co/npm/nut-client.png)](https://nodei.co/npm/nut-client/)
 
-**Supported Node.js versions:** >=18
-
-
-
 ## Description
 
-`nut-client` is a Node.js client for **Network UPS Tools (NUT)**, enabling advanced communication with NUT servers for UPS management. It is built to be robust, performant, and easy to integrate, supporting parallel requests and event-based monitoring via Promises.
+`nut-client` is a Node.js client for **Network UPS Tools (NUT)**, enabling advanced communication with NUT servers for UPS management. It is built to be robust, performant, and easy to integrate, supporting parallel requests, automatic reconnection, and event-based monitoring via Promises.
 
 ## Installation
 
 ```bash
 npm install nut-client
+# or
+pnpm add nut-client
+# or
+yarn add nut-client
 ```
+
+**Supported Node.js versions:** >=18
 
 ## Features
 
@@ -52,7 +54,10 @@ npm install nut-client
   console.log(await client.listUPS());
   console.log(await client.listVariables('ups'));
 
-  //manual command
+  // Run an instant command with optional parameter
+  await client.runCommand('myups', 'shutdown.return', '60');
+
+  // Manual command
   console.log(await client.send(['LIST', 'VAR', 'myups']));
   ```
 
@@ -71,62 +76,136 @@ npm install nut-client
 
   ```
 
-- **StartTLS Support** : Communicate securely with the NUT server using StartTLS for encryption.
+- **Auto-Reconnect** : The client can automatically reconnect on connection loss with exponential backoff, jitter, and configurable limits. Credentials and TLS state are restored automatically.
 
-  ```javascript
+  ```ts
+  import { NUTClient } from 'nut-client'
 
+  const client = new NUTClient('127.0.0.1', 3493, {
+    autoReconnect: true,
+    username: 'admin',
+    password: 'secret',
+    reconnectDelay: 1000,        // initial delay (ms)
+    maxReconnectDelay: 30000,    // cap for exponential backoff
+    reconnectBackoff: 2,         // multiplier
+    maxReconnectAttempts: 10,    // give up after N attempts
+  });
+
+  client.on('reconnected', () => console.log('Reconnected!'));
+  client.on('reconnectExhausted', () => console.log('No more retries'));
+
+  // Or use the static factory for connect + auth in one call
+  const client2 = await NUTClient.create('127.0.0.1', 3493, {
+    username: 'admin',
+    password: 'secret',
+    autoReconnect: true,
+  });
+  ```
+
+- **StartTLS Support** : Communicate securely with the NUT server using StartTLS for encryption. TLS state is automatically restored on reconnect.
+
+  ```ts
   import { NUTClient } from 'nut-client'
 
   const client = new NUTClient('127.0.0.1', 3493);
 
-  //use clear tcp connection
+  // Use clear TCP connection
   console.log(await client.version());
 
   await client.startTLS({
-    // allow self signed certificate
+    // Allow self-signed certificate
     rejectUnauthorized: false
   });
 
-  //use encrypted tcp connection
+  // Use encrypted TCP connection
   console.log(await client.version());
   ```
 
-- **Built-in Monitor** : A `Monitor` module reads variables at regular intervals, emitting UPS events similar to `upsmon` (plus some additional ones).
+- **UPS Object with Convenience Methods** : Get a typed `UPS` object with high-level helpers for status, battery, load, and more.
 
-  ```typescript
+  ```ts
+  const client = new NUTClient('127.0.0.1', 3493);
+  const ups = await client.getUPS('myups');
+
+  if (ups) {
+    console.log('Description:', ups.description);
+
+    const status = await ups.getStatus();    // ENUTStatus[] (e.g. ['OL', 'CHRG'])
+    console.log('Online:', await ups.isOnline());
+    console.log('On battery:', await ups.isOnBattery());
+    console.log('Battery charge:', await ups.getBatteryCharge());  // 0-100 or NaN
+    console.log('Runtime:', await ups.getBatteryRuntime());        // seconds or NaN
+    console.log('Load:', await ups.getLoad());                     // 0-100 or NaN
+    console.log('Model:', await ups.getModel());
+    console.log('Manufacturer:', await ups.getManufacturer());
+    console.log('Serial:', await ups.getSerial());
+    console.log('Input voltage:', await ups.getInputVoltage());
+    console.log('Output voltage:', await ups.getOutputVoltage());
+  }
+  ```
+
+- **Built-in Monitor** : A `Monitor` module reads variables at regular intervals, emitting UPS events similar to `upsmon` (plus additional "NOT" events and variable change tracking). It integrates with the auto-reconnect system — when the client reconnects, the Monitor resumes automatically; when reconnect is exhausted, it emits `NOCOMM`.
+
+  ```ts
+  import { NUTClient, Monitor } from 'nut-client'
+
   const client = new NUTClient('127.0.0.1', 3493);
   const monitor = new Monitor(client, 'myUps');
 
-  //use events like UPSMON
-  monitor.on('ONBATT', () => {
-    console.log('UPS "myUps" lost power and is now on battery');
+  // Status events (when a flag appears)
+  monitor.on('ONLINE', () => console.log('UPS back online'));
+  monitor.on('ONBATT', () => console.log('UPS on battery'));
+  monitor.on('LOWBATT', () => console.log('Battery low'));
+
+  // "NOT" events (when a flag disappears)
+  monitor.on('NOTOL', () => console.log('No longer online'));
+  monitor.on('NOTOB', () => console.log('No longer on battery'));
+  monitor.on('NOTLB', () => console.log('Battery no longer low'));
+  monitor.on('NOTFSD', () => console.log('FSD cleared'));
+  monitor.on('NOTRB', () => console.log('Battery replacement cleared'));
+  monitor.on('NOTCAL', () => console.log('Calibration finished'));
+  monitor.on('NOTOFF', () => console.log('UPS no longer off'));
+  monitor.on('NOTBYPASS', () => console.log('No longer on bypass'));
+
+  // Communication events
+  monitor.on('COMMOK', () => console.log('Communication restored'));
+  monitor.on('COMMBAD', () => console.log('Communication lost'));
+  monitor.on('NOCOMM', () => console.log('Reconnect exhausted'));
+
+  // Variable change events
+  monitor.on('VARIABLE_CHANGED', (key, oldValue, newValue, oldVars, newVars) => {
+    console.log(`${key}: ${oldValue} → ${newValue}`);
   });
 
-  // listen on specific variable changed
-  monitor.on('VARIABLE_CHANGED', (key: string, oldValue: string, newValue: string) => {
-    if(key !== "battery.charge") {
-      return;
-    }
+  // Fired when any variable changed in a poll cycle
+  monitor.on('VARIABLES_CHANGED', (oldVars, newVars) => {
+    console.log('Variables updated');
+  });
 
-    const oldVal = parseFloat(oldValue);
-    const newVal = parseFloat(newValue);
-    if (isNaN(oldVal) || isNaN(newVal)) {
-      return;
-    }
+  monitor.on('BATTERY_CHARGE', (charge, raw) => {
+    console.log(`Battery: ${charge}%`);
+  });
 
-    console.log(`battery is ${oldVal > newVal ? 'dis':''}charging`)
-  })
-
-  // listen on all events
-  monitor.on('*', (event: string, ...args) => {
-    console.log(`receive event ${event} with args`, args);
-  })
-
-  // other events available in the technical documentation
-  // https://thib3113.github.io/nut/interfaces/IMonitorEvents.html
+  // Wildcard listener for debugging
+  monitor.on('*', (event, ...args) => {
+    console.log(`Event: ${event}`, args);
+  });
 
   await monitor.start();
+
+  // Pause/resume without full restart
+  monitor.pause();
+  monitor.isPaused();  // check if paused
+  monitor.resume();
+
+  // Check lifecycle state
+  monitor.isDestroyed();
+
+  // Cleanup
+  monitor.destroy();
   ```
+
+  Full event list available in the [TypeDoc documentation](https://thib3113.github.io/nut/interfaces/IMonitorEvents.html).
 
 - **Command Tracking** : For long-running write operations, enable tracking to get a UUID per command and poll for completion. Only write commands (SET VAR, INSTCMD) are tracked; reads are unaffected. Requires NUT 2.8.0+ (protocol v1.3).
 
@@ -169,13 +248,13 @@ npm install nut-client
   // Enable tracking
   await client.setTracking(true);
 
-  // Command with automatic polling - resolves when complete
+  // Command with automatic polling — resolves when complete
   const result = await client.runCommand('myups', 'shutdown.return', '60', {
     followTracking: true,
     trackingTimeout: 60000,      // max wait time (default: 30s)
     trackingPollInterval: 5000   // poll interval (default: 1s)
   });
-  // result = { tracked: true, status: 'SUCCESS' } or { tracked: true, status: 'ERR' }
+  // result = { tracked: true, status: 'SUCCESS' } | { tracked: true, status: 'ERR' }
 
   if (result.tracked && result.status === 'SUCCESS') {
     console.log('Shutdown completed');
@@ -184,15 +263,101 @@ npm install nut-client
 
   See the [NUT network protocol documentation](https://networkupstools.org/docs/developer-guide.chunked/ar01s09.html) for details on the tracking protocol.
 
+- **UPS Management Commands** : Additional server-side operations like getting descriptions and forcing shutdowns.
+
+  ```ts
+  const client = new NUTClient('127.0.0.1', 3493);
+
+  // Get the UPS description (from ups.conf desc= field)
+  const desc = await client.getUPSDescription('myups');
+
+  // Force a shutdown (sets the FSD flag — requires master/FSD permission)
+  await client.forceShutdown('myups');
+  ```
+
 - **Fully Typed with TypeScript (ESM + CJS)** : Built with TypeScript, `nut-client` is distributed in both ESM and CommonJS modules for maximum compatibility.
 
-## Debug
-this library include [debug](https://www.npmjs.com/package/debug), to debug, you can set the env variable :
-````dotenv
-DEBUG=nut-client:*
-````
+## API Overview
 
+| Class | Description |
+|---|---|
+| `NUTClient` | High-level client facade with auto-reconnect, tracking, and typed parsing |
+| `RawNUTClient` | Low-level TCP client for raw NUT protocol access (advanced use) |
+| `UPS` | Typed representation of a UPS device with convenience methods |
+| `Monitor` | Event-based UPS monitoring with status, variable change, and communication events |
+
+### NUTClient Static Factory
+
+```ts
+// Create and authenticate in one call
+const client = await NUTClient.create('127.0.0.1', 3493, {
+  username: 'admin',
+  password: 'secret',
+  autoReconnect: true,
+});
+```
+
+### NUTClient Events
+
+```ts
+client.on('disconnected', () => {});
+client.on('reconnecting', (attempt, delay) => {});
+client.on('reconnected', () => {});
+client.on('reconnectFailed', (attempt) => {});
+client.on('reconnectExhausted', () => {});
+client.on('destroyed', () => {});
+```
+
+### Error Handling
+
+`nut-client` throws typed errors that map to NUT protocol error codes. All errors extend `NUTProtocolError`:
+
+```ts
+import { AccessDeniedError, UnknownUPSError, ConnectionLostError } from 'nut-client';
+
+try {
+  await client.getVariable('myups', 'battery.charge');
+} catch (e) {
+  if (e instanceof AccessDeniedError) {
+    console.log('Authentication required');
+  } else if (e instanceof UnknownUPSError) {
+    console.log('UPS not found');
+  } else if (e instanceof ConnectionLostError) {
+    console.log('Connection lost');
+  }
+}
+```
+
+### Cleanup
+
+```ts
+// Destroy the client (releases TCP socket, clears timers, removes listeners)
+client.destroy();
+
+// Destroy a monitor
+monitor.destroy();
+```
+
+## Debug
+
+This library includes [debug](https://www.npmjs.com/package/debug). To enable debug logging:
+
+```bash
+DEBUG=nut-client:* node my-script.js
+```
 
 ## Contributing
 
 Contributions are welcome! If you have suggestions, feel free to open an issue or a pull request.
+
+```bash
+git clone https://github.com/thib3113/nut.git
+cd nut
+pnpm install
+pnpm run build
+pnpm run test
+```
+
+## License
+
+[MIT](https://github.com/thib3113/nut/blob/main/LICENSE)

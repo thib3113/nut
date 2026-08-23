@@ -108,12 +108,11 @@ jobs:
       - name: build dependencies
         run: pnpm build
 
+      - name: Update npm
+        run: npm install -g npm@latest
+
       - name: publish to NPM
-        run: |
-          npm config set //registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}
-          pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+        run: npm publish --provenance --access public
         if: steps.package_version.outputs.npm_is_greater != 'true'
 
 #      - name: publish to GPR

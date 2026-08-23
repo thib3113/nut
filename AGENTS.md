@@ -48,7 +48,7 @@ src/
   utils.ts              # parsing, error mapping, escaping utilities
   utils.internal.ts     # internal debug utility
   pkg.ts                # AUTO-GENERATED at build time — NEVER edit
-  Errors/               # 24 custom error classes mapping to NUT protocol error codes
+  Errors/               # 25 custom error classes mapping to NUT protocol error codes
 
 tests/
   NUTClient.tests.ts    # unit tests (mocked)
@@ -79,7 +79,7 @@ RawNUTClient  →  NUTClient  →  UPS
 - **NUTClient** is the public-facing facade that wraps RawNUTClient and adds parsing/structure.
 - **UPS** represents a single UPS device with typed access to variables.
 - **Monitor** uses `TypedEmitter` for type-safe event emission.
-- **24 custom error classes** in `src/Errors/` map to NUT protocol error codes.
+- **25 custom error classes** in `src/Errors/` map to NUT protocol error codes.
 - Minimal runtime dependencies: `async`, `debug`, `tiny-typed-emitter`.
 
 ---
