@@ -55,7 +55,7 @@
     "@types/async": "3.2.25",
     "@types/debug": "4.1.13",
     "@types/node": "26.2.0",
-    "@typescript-eslint/parser": "8.67.0",
+    "@typescript-eslint/parser": "8.69.0",
     "@vitest/coverage-v8": "4.1.11",
     "esbuild": "0.28.2",
     "eslint": "10.8.1",
