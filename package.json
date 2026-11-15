@@ -51,7 +51,7 @@
   "author": "Thibaut SEVERAC <thib3113@gmail.com>",
   "license": "MIT",
   "devDependencies": {
-    "@tsconfig/node-lts": "24.0.1",
+    "@tsconfig/node-lts": "26.0.1",
     "@types/async": "3.2.25",
     "@types/debug": "4.1.13",
     "@types/node": "26.2.0",
